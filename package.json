@@ -1,0 +1,23 @@
+{
+  "name": "mongoose-versioned",
+  "version": "1.0.0",
+  "description": "Versioning module for MongoDB based in mongoose. It uses a main collection for the current data and a shadow collection for the old versions.",
+  "main": "source/versioning.js",
+  "scripts": {
+    "test": "tap test/*.test.js"
+  },
+  "keywords": [
+    "mongodb"
+  ],
+  "author": "Lucia de Espona Pernas",
+  "license": "MIT",
+  "dependencies": {
+    "immutable": "^4.0.0-rc.12",
+    "mongoose": "^5.12.13"
+  },
+  "devDependencies": {
+    "chalk": "^4.1.1",
+    "mongodb-memory-server": "^6.9.6",
+    "tap": "^14.11.0"
+  }
+}
