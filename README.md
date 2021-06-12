@@ -33,41 +33,61 @@ let Schema = mongoose.Schema
 
 // connect to the database following mongoose instructions, for example:
 let mongodb_uri = 'mongodb://localhost/test'
-//let mongodb_uri = 'mongodb://localhost:27018/mongoose_versioned?replicaSet=rs0'
 
-mongoose.connect(mongodb_uri, { useUnifiedTopology: true, useNewUrlParser: true, useFindAndModify: false})
-const db = mongoose.connection
-db.on('error', console.error.bind(console, 'connection error:'))
-db.once('open', function() {
-  console.log('Connected!')
+const versionItems = async(mongodb_uri) => {
+  try {
+      await mongoose.connect(mongodb_uri, { useUnifiedTopology: true, useNewUrlParser: true, useFindAndModify: false })
+      console.log("Database.connect: DB connected ")
+  } catch (err) {
+      console.error(`Database.connect: MongoDB connection error. Please make sure MongoDB is running:` + err.message)
+      throw new Error(err)
+  }
+
+  const db = mongoose.connection
 
   // create the model
-  let testSchema = new Schema({
+  let itemSchema = new Schema({
     code: { type: Number, required: true, unique: true },
     name: { type: String, required: true, unique: false }
   })
   
   // add the versioning plugin to the schema and specify 
   // the name of the shadow collection
-  const name = 'test'
-  testSchema.plugin(versioning, name + "s.versioning")
+  const name = 'item'
+  itemSchema.plugin(versioning, name + "s.versioning")
 
   // instantiate the model
-  let testModel = mongoose.model(name, testSchema)
+  let Item = mongoose.model(name, itemSchema)
   // at this point a collection named 'tests'
 
   // add a new document
+  const newItem = {
+    code: 1,
+    name: "first item"
+  }
+
+  let savedItem = await new Item(newItem).save()
+  console.log(`saved item with id: ${savedItem._id}, version: ${savedItem._version}`)
+
+  let id = savedItem._id
+
   // update
-
+  savedItem.name = "modified item"
+  let updatedItem = await savedItem.save()
+  console.log(`updated item with name: ${updatedItem.name}, version: ${updatedItem._version}`)
+    
   // find current version
-  // find previous version
+  let foundCurrent = await Item.findVersion(id, 2, Item)
+  console.log(`found current version ${foundCurrent._version}, name = ${foundCurrent.name}`)
 
-  // find current version by date
-  // find previous version by date
+  // find old version
+  let foundOld = await Item.findVersion(id, 1, Item)
+  console.log(`found current version ${foundOld._version}, name = ${foundOld.name}`)
 
-  // delete
+  await db.close()
+}
 
-})
+versionItems(mongodb_uri)
 
 ```
 
