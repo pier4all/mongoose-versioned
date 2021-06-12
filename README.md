@@ -93,4 +93,37 @@ versionItems(mongodb_uri)
 
 ### Using transactions
 Transactions
-[code snippet]
+
+Transactions can be used to ensure the database remains in a consistent state even if the operation fails. Update and delete operations involve changes in both main and shadow collections and therefore need to be wrapped in a transaction to ensure serialization. 
+
+The transaction should be stated before calling the update/delete operation and in addition the session should be stored in a reserved "_session" inside the document and passed as an option to save/delete method.
+
+```javascript
+const versioning = require('./source/versioning')
+const mongoose = require('mongoose')
+mongoose.Promise = require('bluebird')
+
+[...]
+
+try {
+  // start transaction
+  session = await mongoose.startSession()
+  session.startTransaction()
+
+  // store session in the document
+  document[c.SESSION] = session
+
+  // save sending the session as option
+  await document.save({session})
+
+  // commit transaction
+  await session.commitTransaction()
+  session.endSession()
+
+} catch(error) {
+  if (session) session.endSession()
+  const message = `Error updating document ${id} in the collection ${collection}.`
+  processError(res, error, message)
+}
+
+```
