@@ -54,7 +54,7 @@ const versionItems = async(mongodb_uri) => {
   // add the versioning plugin to the schema and specify 
   // the name of the shadow collection
   const name = 'item'
-  itemSchema.plugin(versioning, name + "s.versioning")
+  itemSchema.plugin(versioning, {collection: name + "s.versioning", mongoose})
 
   // instantiate the model
   let Item = mongoose.model(name, itemSchema)
