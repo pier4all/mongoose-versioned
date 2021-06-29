@@ -1,6 +1,6 @@
 {
     "name": "mongoose-versioned",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "description": "Versioning module for MongoDB based in mongoose. It uses a main collection for the current data and a shadow collection for the old versions.",
     "main": "source/versioning.js",
     "repository": {
@@ -19,7 +19,14 @@
     "scripts": {
         "test": "tap test/*.test.js"
     },
-    "author": "Lucia de Espona Pernas",
+    "author": {
+            "name": "Lucía de Espona Pernas",
+            "url": "https://github.com/espona"
+    },
+    "contributors": [
+        { "name": "Lucía de Espona Pernas", "url": "https://github.com/espona" },
+        { "name": "Jean-Claude Schmidig", "url": "https://github.com/jcschmidig"}
+    ],
     "license": "MIT",
     "dependencies": {
         "immutable": "^4.0.0-rc.12",
