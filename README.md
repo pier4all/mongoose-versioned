@@ -1,24 +1,16 @@
 # Versioning Module MongoDB
 Module for versioning in MongoDB, inspired by Vermongo (https://www.npmjs.com/package/mongoose-vermongo and https://github.com/thiloplanz/v7files/wiki/Vermongo).
 
-It includes support for transactions to avoid inconsistency when performing an update or deletion since this operations involve the main and the shadow collection (see instructions below). 
+It includes support for transactions to avoid inconsistency when performing an update or deletion since this operations involve the main and the shadow collection (see instructions below).
 
-This module allows to keep the change history of every document and the deleted documents. The idea is to have a "main collection" storing the current document versions and a different collection called "shadow collection" to keep all the past versions and deleted docuemnts. 
+This module allows to keep the change history of every document and the deleted documents. The idea is to have a "main collection" storing the current document versions and a different collection called "shadow collection" to keep all the past versions and deleted documents.
 
-(pending) 
-description of creation process
-description of updating process
-description of deletion process
-query methods on versions by number and date
+See Basic Usage.
 
-## Instructions
-This package is also available as npm module at: (pending)
-
-For development and test, please follow the instrucitons below.
-### Installation
-Install all the dependencies as listed in the file `package.json`.
+### Use
+In order to use the package just install it as a dependency
 ```
-npm install
+npm install mongoose-versioned
 ```
 
 ### Basic usage
@@ -26,7 +18,7 @@ This package requires mongoose and it is added as a plugin to each individual mo
 
 ```javascript
 // import versioning and mongoose related dependencies
-const versioning = require('./source/versioning')
+const versioning = require('mongoose-versioned')
 const mongoose = require('mongoose')
 mongoose.Promise = require('bluebird')
 let Schema = mongoose.Schema
@@ -50,8 +42,8 @@ const versionItems = async(mongodb_uri) => {
     code: { type: Number, required: true, unique: true },
     name: { type: String, required: true, unique: false }
   })
-  
-  // add the versioning plugin to the schema and specify 
+
+  // add the versioning plugin to the schema and specify
   // the name of the shadow collection
   const name = 'item'
   itemSchema.plugin(versioning, {collection: name + "s.versioning", mongoose})
@@ -75,7 +67,7 @@ const versionItems = async(mongodb_uri) => {
   savedItem.name = "modified item"
   let updatedItem = await savedItem.save()
   console.log(`updated item with name: ${updatedItem.name}, version: ${updatedItem._version}`)
-    
+
   // find current version
   let foundCurrent = await Item.findVersion(id, 2, Item)
   console.log(`found current version ${foundCurrent._version}, name = ${foundCurrent.name}`)
@@ -94,7 +86,7 @@ versionItems(mongodb_uri)
 ### Using transactions
 Transactions
 
-Transactions can be used to ensure the database remains in a consistent state even if the operation fails. Update and delete operations involve changes in both main and shadow collections and therefore need to be wrapped in a transaction to ensure serialization. 
+Transactions can be used to ensure the database remains in a consistent state even if the operation fails. Update and delete operations involve changes in both main and shadow collections and therefore need to be wrapped in a transaction to ensure serialization.
 
 The transaction should be stated before calling the update/delete operation and in addition the session should be stored in a reserved "_session" inside the document and passed as an option to save/delete method.
 
