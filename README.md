@@ -1,5 +1,5 @@
 # Versioning Module MongoDB
-Module for versioning in MongoDB, inspired by Vermongo (https://www.npmjs.com/package/mongoose-vermongo and https://github.com/thiloplanz/v7files/wiki/Vermongo).
+Module for versioning in MongoDB, inspired by Vermongo (https://www.npmjs.com/package/mongoose-vermongo, https://github.com/codela/mongoose-vermongo and https://github.com/thiloplanz/v7files/wiki/Vermongo).
 
 It includes support for transactions to avoid inconsistency when performing an update or deletion since this operations involve the main and the shadow collection (see instructions below).
 
