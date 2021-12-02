@@ -17,7 +17,7 @@ tap.test(`schema cannot have field ${constants.EDITOR}`, t => {
     reservedField[constants.EDITOR] = { type: String, required: true, default: constants.DEFAULT_EDITOR }
     badSchema.add(reservedField)
     
-    badSchema.plugin(versioning, NAME + "s.versioning")
+    badSchema.plugin(versioning)
     mongoose.model(NAME, badSchema)
     t.fail('Should not get here')
 
@@ -55,7 +55,7 @@ tap.test(`schema cannot have field ${constants.VERSION}`, t => {
     reservedField[constants.VERSION] = { type: Number, required: true, default: 0, select: true }
     badSchema.add(reservedField)
     
-    badSchema.plugin(versioning, NAME + "s.versioning")
+    badSchema.plugin(versioning, {collection: NAME + "s.versioning", ensureIndex: false})
     mongoose.model(NAME, badSchema)
     t.fail('Should not get here')
 
@@ -74,7 +74,7 @@ tap.test(`schema cannot have field ${constants.VALIDITY}`, t => {
     reservedField[constants.VALIDITY] = { type: Date, required: false }
     badSchema.add(reservedField)
     
-    badSchema.plugin(versioning, NAME + "s.versioning")
+    badSchema.plugin(versioning, {collection: NAME + "s.versioning", ensureIndex: false})
     mongoose.model(NAME, badSchema)
     t.fail('Should not get here')
 
@@ -93,7 +93,7 @@ tap.test(`schema cannot have field ${constants.DELETION}`, t => {
     reservedField[constants.DELETION] = { type: Date, required: false }
     badSchema.add(reservedField)
     
-    badSchema.plugin(versioning, NAME + "s.versioning")
+    badSchema.plugin(versioning, {collection: NAME + "s.versioning", ensureIndex: false})
     mongoose.model(NAME, badSchema)
     t.fail('Should not get here')
 
@@ -112,7 +112,7 @@ tap.test(`schema cannot have field ${constants.EDITION}`, t => {
     reservedField[constants.EDITION] = { type: Date, required: false }
     badSchema.add(reservedField)
     
-    badSchema.plugin(versioning, NAME + "s.versioning")
+    badSchema.plugin(versioning, {collection: NAME + "s.versioning", ensureIndex: false})
     mongoose.model(NAME, badSchema)
     t.fail('Should not get here')
 
@@ -131,7 +131,7 @@ tap.test(`schema cannot have field ${constants.SESSION}`, t => {
     reservedField[constants.SESSION] = { type: Date, required: false }
     badSchema.add(reservedField)
     
-    badSchema.plugin(versioning, NAME + "s.versioning")
+    badSchema.plugin(versioning, {collection: NAME + "s.versioning", ensureIndex: false})
     mongoose.model(NAME, badSchema)
     t.fail('Should not get here')
 
@@ -149,7 +149,7 @@ tap.test(`default shadow collection is versions`, t => {
   let reservedField = {date: { type: Date, required: false }}
   newSchema.add(reservedField)
   
-  newSchema.plugin(versioning)
+  newSchema.plugin(versioning, {ensureIndex: false})
   mongoose.model(NAME, newSchema)
 
   t.equal(newSchema.statics.VersionedModel.collection.collectionName, 'versions')
@@ -164,7 +164,7 @@ tap.test(`shadow collection is set to provided string`, t => {
   let field = {date: { type: Date, required: false }}
   newSchema.add(field)
   
-  newSchema.plugin(versioning, NAME + "s.versioning")
+  newSchema.plugin(versioning, {collection: NAME + "s.versioning", ensureIndex: false})
   mongoose.model(NAME, newSchema)
 
   t.equal(newSchema.statics.VersionedModel.collection.collectionName, NAME + "s.versioning")
@@ -179,7 +179,7 @@ tap.test(`shadow collection is set to provided object property`, t => {
   let field = {date: { type: Date, required: false }}
   newSchema.add(field)
   
-  newSchema.plugin(versioning, {collection: NAME + "s.versioning"})
+  newSchema.plugin(versioning, {collection: NAME + "s.versioning", ensureIndex: false})
   mongoose.model(NAME, newSchema)
 
   t.equal(newSchema.statics.VersionedModel.collection.collectionName, NAME + "s.versioning")

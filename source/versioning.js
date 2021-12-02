@@ -16,6 +16,7 @@ module.exports = function (schema, options) {
     options = options || {}
     options.collection = options.collection || 'versions'
     options.logError = options.logError || false
+    options.ensureIndex = options.ensureIndex ?? true
     options.mongoose = options.mongoose || require('mongoose')
     let mongoose = options.mongoose
 
@@ -84,6 +85,10 @@ module.exports = function (schema, options) {
 
     // Add reference to model to original schema
     schema.statics.VersionedModel = mongoose.model(options.collection, versionedSchema)
+
+    // calling create index from MongoDB to be sure index is created
+    if (options.ensureIndex)
+        schema.statics.VersionedModel.collection.createIndex(versionedValidityIndex)
 
     // Add special find by id and validity date that includes versioning
     schema.statics.findValidVersion = async (id, date, model) => {

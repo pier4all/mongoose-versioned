@@ -1,7 +1,7 @@
 const constants = require("./constants")
 
 exports.cloneSchema = (schema, mongoose) => {
-    let clonedSchema = new mongoose.Schema()
+    let clonedSchema = new mongoose.Schema({autoIndex: false})
     schema.eachPath(function (path, type) {
         if (path === constants.ID) {
             return

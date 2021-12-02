@@ -39,7 +39,7 @@ const NAME = "test"
 let testSchema = new Schema({
   data : { type: String, required: false, unique: false },
 }, { autoIndex: false })
-testSchema.plugin(versioning, NAME + "s.versioning")
+testSchema.plugin(versioning, { options: NAME + "s.versioning", ensureIndex: true})
 let Mock = mongoose.model(NAME, testSchema)
 
 const mockOne = { 
