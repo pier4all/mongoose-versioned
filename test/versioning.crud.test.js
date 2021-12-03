@@ -73,7 +73,7 @@ tap.test('update object', async (childTest) => {
 
 tap.test('find current version by number', async (childTest) => {
   let mock = await Mock.findVersion(mockOne._id, 2, Mock)
-  childTest.isEqual(mock[constants.VALIDITY].end, undefined)
+  childTest.equal(mock[constants.VALIDITY].end, undefined)
   childTest.end()
 })
 
