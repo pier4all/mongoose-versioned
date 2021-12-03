@@ -41,6 +41,6 @@
     "devDependencies": {
         "chalk": "^4.1.1",
         "mongodb-memory-server": "^6.9.6",
-        "tap": "^14.11.0"
+        "tap": "^15.1.5"
     }
 }
