@@ -20,12 +20,18 @@
         "test": "tap test/*.test.js"
     },
     "author": {
-            "name": "Lucía de Espona Pernas",
-            "url": "https://github.com/espona"
+        "name": "Lucía de Espona Pernas",
+        "url": "https://github.com/espona"
     },
     "contributors": [
-        { "name": "Lucía de Espona Pernas", "url": "https://github.com/espona" },
-        { "name": "Jean-Claude Schmidig", "url": "https://github.com/jcschmidig"}
+        {
+            "name": "Lucía de Espona Pernas",
+            "url": "https://github.com/espona"
+        },
+        {
+            "name": "Jean-Claude Schmidig",
+            "url": "https://github.com/jcschmidig"
+        }
     ],
     "license": "MIT",
     "dependencies": {
