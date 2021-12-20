@@ -229,8 +229,6 @@ tap.test('update using updateOne not existing document does not update', async (
 })
 
 tap.teardown(async function() { 
-  //await Mock.deleteMany()
-  //await Mock.VersionedModel.deleteMany()
   await mongoose.disconnect()
   await mongoServer.stop()
   console.log(chalk.bold.red('MongoDB disconnected'))

@@ -228,7 +228,7 @@ module.exports = function (schema, options) {
     })
 
     //updateOne (includes model/query level)
-    schema.pre('updateOne', async function (next, a, b) {
+    schema.pre('updateOne', async function (next) {
 
         // load the base version
         let base = await this.model
