@@ -10,38 +10,13 @@ let Schema = mongoose.Schema
 // start in memory server
 const { MongoMemoryServer } = require( 'mongodb-memory-server' )
 
-const mongoServer = new MongoMemoryServer()
+// global variable to store the server
+let mongoServer
 
-mongoServer.getUri().then((mongoUri) => {
-  const mongooseOpts = {
-    useUnifiedTopology: true, 
-    useNewUrlParser: true, 
-    useFindAndModify: false
-  }
+// test versioning.js
+const tap = require('tap')
 
-  mongoose.connect(mongoUri, mongooseOpts)
-
-  mongoose.connection.on('error', (e) => {
-    if (e.message.code === 'ETIMEDOUT') {
-      console.log(e)
-      mongoose.connect(mongoUri, mongooseOpts)
-    }
-    console.log(e)
-  })
-
-  mongoose.connection.once('open', () => {
-    console.log(chalk.bold.green(`MongoDB successfully connected to ${mongoUri}`))
-  })
-})
-
-// test schema definition
-const NAME = "test"
-let testSchema = new Schema({
-  data : { type: String, required: false, unique: false },
-}, { autoIndex: false })
-testSchema.plugin(versioning, { options: NAME + "s.versioning", ensureIndex: true})
-let Mock = mongoose.model(NAME, testSchema)
-
+// data
 const mockOne = { 
   _id: new mongoose.Types.ObjectId(),
   data: "first mock test" 
@@ -60,10 +35,38 @@ const mockFour = {
   data: "fourth mock test" 
 }
 
+// auxiliar global variables
+let Mock
 let initialMock
 
-// test versioning.js
-const tap = require('tap')
+// test initialization
+tap.before(async function() { 
+
+  mongoServer = await MongoMemoryServer.create()
+  
+  let mongoUri = mongoServer.getUri()
+
+  const mongooseOpts = {
+    useUnifiedTopology: true, 
+    useNewUrlParser: true, 
+    useFindAndModify: false
+  }
+
+  await mongoose.connect(mongoUri, mongooseOpts)
+
+  console.log(chalk.bold.green(`MongoDB successfully connected to ${mongoUri}`))
+  
+  // test schema definition
+  const NAME = "test"
+  let testSchema = new Schema({
+    data : { type: String, required: false, unique: false },
+  }, { autoIndex: false })
+  
+  testSchema.plugin(versioning, { options: NAME + "s.versioning", ensureIndex: true})
+  
+  Mock = mongoose.model(NAME, testSchema)
+
+})
 
 // test versioning CRUD
 tap.test('create new object', async (childTest) => {
@@ -228,12 +231,10 @@ tap.test('update using updateOne not existing document does not update', async (
 tap.teardown(async function() { 
   //await Mock.deleteMany()
   //await Mock.VersionedModel.deleteMany()
-  mongoose.disconnect()
-  mongoServer.stop()
+  await mongoose.disconnect()
+  await mongoServer.stop()
   console.log(chalk.bold.red('MongoDB disconnected'))
 })
-
-
 
 // Utility function
 function findIndex(refIndex, indexes) {
