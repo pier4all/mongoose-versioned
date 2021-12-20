@@ -144,6 +144,24 @@ tap.test('trying to update deleted version fails', async (childTest) => {
   childTest.end()
 })
 
+tap.test('check default index is present in the shadow collection', async (childTest) => {
+  const indexes = await Mock.VersionedModel.collection.getIndexes()
+
+  const shadowIndex = [
+     [ '_id._id', 1 ],
+     [ '_validity.start', 1 ],
+     [ '_validity.end', 1 ]
+   ]
+
+  if (findIndex(shadowIndex, indexes) ) {
+    childTest.ok('Found expected shadow index')
+  } else {
+    childTest.fail('Shadow index not found')
+  }
+
+  childTest.end()
+})
+
 tap.teardown(async function() { 
   //await Mock.deleteMany()
   //await Mock.VersionedModel.deleteMany()
@@ -151,3 +169,27 @@ tap.teardown(async function() {
   mongoServer.stop()
   console.log(chalk.bold.red('MongoDB disconnected'))
 })
+
+// Utility function
+function findIndex(refIndex, indexes) {
+  let indexFound = false
+  for (const [name, index] of Object.entries(indexes)) {
+    if(index.length == refIndex.length){
+      for (let i = 0; i < index.length; i++) {
+        if (index[i].length === refIndex[i].length) {
+          if ((index[i][0] == refIndex[i][0]) && (index[i][1] == refIndex[i][1])) {
+            indexFound = true
+          } else {
+            indexFound = false
+            break
+          }
+        } else {
+          indexFound = false
+          break
+        }
+      }
+      if (indexFound) break 
+    } 
+  }
+  return indexFound
+}

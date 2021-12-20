@@ -77,7 +77,8 @@ module.exports = function (schema, options) {
     versionedValidityIndex[constants.ID + '.' + constants.ID] = 1
     versionedValidityIndex[validity_start] = 1
     versionedValidityIndex[validity_end] = 1
-    versionedSchema.index(versionedValidityIndex)
+    const indexName = { name: "_id_validity_start_validity_end"};
+    versionedSchema.index(versionedValidityIndex, indexName)
 
     // Turn off internal versioning, we don't need this since we version on everything
     schema.set("versionKey", false)
@@ -88,7 +89,7 @@ module.exports = function (schema, options) {
 
     // calling create index from MongoDB to be sure index is created
     if (options.ensureIndex)
-        schema.statics.VersionedModel.collection.createIndex(versionedValidityIndex)
+        schema.statics.VersionedModel.collection.createIndex(versionedValidityIndex, indexName)
 
     // Add special find by id and validity date that includes versioning
     schema.statics.findValidVersion = async (id, date, model) => {
