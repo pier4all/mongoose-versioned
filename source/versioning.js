@@ -141,6 +141,7 @@ module.exports = function (schema, options) {
         return document
     }
 
+    // document level middleware
     schema.pre('save', async function (next) {
 
         if (this.isNew) {
@@ -224,6 +225,49 @@ module.exports = function (schema, options) {
 
         next()
         return null
+    })
+
+    //updateOne (includes model/query level)
+    schema.pre('updateOne', async function (next, a, b) {
+
+        // load the base version
+        let base = await this.model
+            .findOne(this._conditions)
+            .then((foundBase) => {
+            if (foundBase === null) {
+                next()
+            }
+            return foundBase})
+        
+        // get the transaction session
+        const session = this.options.session
+ 
+        // store the session for the save method
+        base[constants.SESSION] = session
+        
+        await base.save({session})
+
+        next()
+    })
+
+    //TODO (document level middleware)
+    //deleteOne
+
+    // query level middleware
+    // TODO (query level middleware)
+    // deleteMany
+    // deleteOne
+    // findOneAndDelete
+    // findOneAndRemove
+    // findOneAndReplace
+    // findOneAndUpdate
+    // replaceOne
+    // updateMany
+    
+    // model level middleware
+    schema.pre('insertMany', async function (next, docs) {
+        docs.forEach(d => { d[constants.VERSION] = 1; })
+        next()
     })
 
 }

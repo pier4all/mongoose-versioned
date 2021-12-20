@@ -51,16 +51,25 @@ const mockTwo = {
   data: "second mock test" 
 }
 
+const mockThree = { 
+  _id: new mongoose.Types.ObjectId(),
+  data: "third mock test" 
+}
+const mockFour = { 
+  _id: new mongoose.Types.ObjectId(),
+  data: "fourth mock test" 
+}
+
 let initialMock
 
 // test versioning.js
 const tap = require('tap')
 
 // test versioning CRUD
-tap.test('create new object', async (t) => {
+tap.test('create new object', async (childTest) => {
   initialMock = await new Mock(mockOne).save()
-  t.equal(initialMock[constants.VERSION], 1)
-  t.end()
+  childTest.equal(initialMock[constants.VERSION], 1)
+  childTest.end()
 })
 
 tap.test('update object', async (childTest) => {
@@ -162,6 +171,60 @@ tap.test('check default index is present in the shadow collection', async (child
   childTest.end()
 })
 
+tap.test('insert many objects', async (childTest) => {
+  const mocks = await Mock.insertMany([mockThree, mockFour])
+
+  childTest.equal(mocks.length, 2)
+  mocks.forEach(m => { childTest.equal(m[constants.VERSION], 1)})
+
+  childTest.end()
+})
+
+tap.test('update using updateOne at document level', async (childTest) => {
+
+  let mock = await Mock.findById(mockThree._id)
+
+  let result = await mock.updateOne({"$set": {data: "modified"}})  
+  childTest.equal(result.n, 1)
+  childTest.equal(result.nModified, 1)
+  childTest.equal(result.ok, 1)
+
+  mock = await Mock.findById(mockThree._id)
+  childTest.equal(mock[constants.VERSION], 2)
+
+  let versionedMock = await Mock.findVersion(mockThree._id, 1, Mock)
+  childTest.type(versionedMock[constants.VALIDITY].end, Date)
+
+  childTest.end()
+})
+
+tap.test('update using updateOne at model level', async (childTest) => {
+
+  let result = await Mock.updateOne({_id: mockFour._id}, {"$set": {data: "modified"}})  
+  
+  childTest.equal(result.n, 1)
+  childTest.equal(result.nModified, 1)
+  childTest.equal(result.ok, 1)
+
+  let mock = await Mock.findById(mockFour._id)
+  childTest.equal(mock[constants.VERSION], 2)
+
+  let versionedMock = await Mock.findVersion(mockFour._id, 1, Mock)
+  childTest.type(versionedMock[constants.VALIDITY].end, Date)
+
+  childTest.end()
+})
+
+tap.test('update using updateOne not existing document does not update', async (childTest) => {
+  let result = await Mock.updateOne({_id: mockOne._id}, {"$set": {data: "modified"}})  
+  
+  childTest.equal(result.n, 0)
+  childTest.equal(result.nModified, 0)
+  childTest.equal(result.ok, 1)
+
+  childTest.end()
+})
+
 tap.teardown(async function() { 
   //await Mock.deleteMany()
   //await Mock.VersionedModel.deleteMany()
@@ -169,6 +232,8 @@ tap.teardown(async function() {
   mongoServer.stop()
   console.log(chalk.bold.red('MongoDB disconnected'))
 })
+
+
 
 // Utility function
 function findIndex(refIndex, indexes) {
