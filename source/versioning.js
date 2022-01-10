@@ -250,6 +250,28 @@ module.exports = function (schema, options) {
         next()
     })
 
+    //updateOne (query level)
+    schema.pre('updateMany', async function (next) {
+
+        // load the base version
+        let bases = await this.model
+            .find(this._conditions)
+            .then((foundBases) => {
+                return foundBases})
+        
+        // get the transaction session
+        const session = this.options.session
+ 
+        for(base of bases) {
+        
+            // store the session for the save method
+            base[constants.SESSION] = session
+            
+            await base.save({session})
+        }
+        next()
+    })
+
     //TODO (document level middleware)
     //deleteOne
 
@@ -262,7 +284,6 @@ module.exports = function (schema, options) {
     // findOneAndReplace
     // findOneAndUpdate
     // replaceOne
-    // updateMany
     
     // model level middleware
     schema.pre('insertMany', async function (next, docs) {

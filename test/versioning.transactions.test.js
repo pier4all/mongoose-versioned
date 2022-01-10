@@ -20,19 +20,33 @@ let Mock
 // test data
 const mockOne = { 
   _id: new mongoose.Types.ObjectId(),
-  data: "first mock test" 
+  data: "first mock test",
+  number: 1 
 }
 const mockTwo = { 
   _id: new mongoose.Types.ObjectId(),
-  data: "second mock test" 
+  data: "second mock test",
+  number: 2 
 }
 const mockThree = { 
   _id: new mongoose.Types.ObjectId(),
-  data: "third mock test" 
+  data: "third mock test",
+  number: 3
 }
 const mockFour = { 
   _id: new mongoose.Types.ObjectId(),
-  data: "fourth mock test" 
+  data: "fourth mock test",
+  number: 4 
+}
+const mockFive = { 
+  _id: new mongoose.Types.ObjectId(),
+  data: "fifth mock test",
+  number: 5 
+}
+const mockSix = { 
+  _id: new mongoose.Types.ObjectId(),
+  data: "sixth mock test",
+  number: 6 
 }
 
 tap.before(async function() { 
@@ -56,6 +70,7 @@ tap.before(async function() {
   const NAME = "test"
   let testSchema = new Schema({
     data : { type: String, required: false, unique: false },
+    number : { type: Number, required: false, unique: false },
   }, { autoIndex: false })
   testSchema.plugin(versioning, { options: NAME + "s.versioning", ensureIndex: true})
   Mock = mongoose.model(NAME, testSchema)
@@ -64,7 +79,7 @@ tap.before(async function() {
 
 // test versioning CRUD
 tap.test('update object', async (childTest) => {
-  const mocks = await Mock.insertMany([mockOne, mockTwo, mockThree, mockFour])
+  const mocks = await Mock.insertMany([mockOne, mockTwo, mockThree, mockFour, mockFive, mockSix])
 
   let mock = await Mock.findById(mockOne._id)
   mock.data = "modified"
@@ -165,9 +180,61 @@ tap.test('update using updateOne at model level', async (childTest) => {
   childTest.end()
 })
 
+tap.test('update using updateMany at model level', async (childTest) => {
+  
+  // start transaction
+  session = await mongoose.startSession()
+  session.startTransaction()
+
+  // store _session in document and save
+  let result = await Mock.updateMany({number: {"$gte": 5}}, {"$set": {data: "modified"}}, {session})  
+
+  // commit transaction
+  await session.commitTransaction()
+  session.endSession()
+
+  childTest.equal(result.n, 2)
+  childTest.equal(result.nModified, 2)
+  childTest.equal(result.ok, 1)
+
+  // Check first mock
+  let mockFiveFound = await Mock.findById(mockFive._id)
+  childTest.equal(mockFiveFound [constants.VERSION], 2)
+
+  let versionedMockFive = await Mock.findVersion(mockFive._id, 1, Mock)
+  childTest.type(versionedMockFive[constants.VALIDITY].end, Date)
+
+  // Check second mock
+  let mockSixFound = await Mock.findById(mockSix._id)
+  childTest.equal(mockSixFound [constants.VERSION], 2)
+
+  let versionedMockSix = await Mock.findVersion(mockSix._id, 1, Mock)
+  childTest.type(versionedMockSix[constants.VALIDITY].end, Date)
+
+  childTest.end()
+})
+
+tap.test('update using updateMany at model level with no matching documents', async (childTest) => {
+  
+  // start transaction
+  session = await mongoose.startSession()
+  session.startTransaction()
+
+  // store _session in document and save
+  let result = await Mock.updateMany({number: {"$gte": 10}}, {"$set": {data: "modified"}}, {session})  
+
+  // commit transaction
+  await session.commitTransaction()
+  session.endSession()
+
+  childTest.equal(result.n, 0)
+  childTest.equal(result.nModified, 0)
+  childTest.equal(result.ok, 1)
+
+  childTest.end()
+})
+
 tap.teardown(async function() { 
-  //await Mock.deleteMany()
-  //await Mock.VersionedModel.deleteMany()
   await mongoose.disconnect()
   await mongoServer.stop()
   console.log(chalk.bold.red('MongoDB disconnected'))
