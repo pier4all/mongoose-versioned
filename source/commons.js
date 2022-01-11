@@ -3,13 +3,8 @@ const constants = require("./constants")
 exports.filterAndUpdateOne = async (query, next) => {
 
     // load the base version
-    let base = await query.model
-        .findOne(query._conditions, null, getQueryOptions(query))
-        .then((foundBase) => {
-        if (foundBase === null) {
-            next()
-        }
-        return foundBase})
+    let base = await queryOne (query, next)
+    if (base === null) next()
         
     // get the transaction session
     const session = query.options.session
@@ -19,6 +14,12 @@ exports.filterAndUpdateOne = async (query, next) => {
     
     await base.save({session})
 
+    // special case for the replace document, avoid the version to get reseted to zero
+    if (!query._update["$set"]) {
+        query._update[constants.VERSION] = base[constants.VERSION]
+        query._update[constants.VALIDITY] = base[constants.VALIDITY]
+    }
+    
     next()
 }
 
@@ -48,4 +49,10 @@ getQueryOptions = (query) => {
     let skip = query.options.skip || 0
 
     return {sort, skip}
+}
+
+queryOne = async (query, next) => {
+    // load the base version
+    let base = await query.model.findOne(query._conditions, null, getQueryOptions(query))
+    return base
 }

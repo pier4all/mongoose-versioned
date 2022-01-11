@@ -228,6 +228,12 @@ module.exports = function (schema, options) {
         return null
     })
 
+    // model level middleware
+    schema.pre('insertMany', async function (next, docs) {
+        docs.forEach(d => { d[constants.VERSION] = 1; })
+        next()
+    })
+
     //updateOne (includes model/query level)
     schema.pre('updateOne', async function (next) {
         await commons.filterAndUpdateOne(this, next)
@@ -243,22 +249,24 @@ module.exports = function (schema, options) {
         await commons.filterAndUpdateOne(this, next)
     })
     
-    // model level middleware
-    schema.pre('insertMany', async function (next, docs) {
-        docs.forEach(d => { d[constants.VERSION] = 1; })
-        next()
+    // findOneAndReplace (query level)
+    schema.pre('findOneAndReplace', async function (next) {
+        await commons.filterAndUpdateOne(this, next)
+    })
+
+    // findOneAndReplace (query level)
+    schema.pre('replaceOne', async function (next) {
+        await commons.filterAndUpdateOne(this, next)
     })
 
     //TODO (document level middleware)
     //deleteOne
-
     // query level middleware
     // TODO (query level middleware)
     // deleteMany
     // deleteOne
     // findOneAndDelete
     // findOneAndRemove
-    // findOneAndReplace
     // replaceOne
 
 }

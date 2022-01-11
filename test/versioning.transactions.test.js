@@ -49,6 +49,30 @@ const mockSix = {
   number: 6 
 }
 
+const mockSeven = { 
+  _id: new mongoose.Types.ObjectId(),
+  data: "seventh mock test",
+  number: 7 
+}
+
+const mockEight = { 
+  _id: new mongoose.Types.ObjectId(),
+  data: "eighth mock test",
+  number: 8 
+}
+
+const mockNine = { 
+  _id: new mongoose.Types.ObjectId(),
+  data: "ninth mock test",
+  number: 9 
+}
+
+const mockTen = { 
+  _id: new mongoose.Types.ObjectId(),
+  data: "tenth mock test",
+  number: 10 
+}
+
 tap.before(async function() { 
 
   mongoServer = await MongoMemoryReplSet.create({ replSet: { count: 4 } })
@@ -79,7 +103,7 @@ tap.before(async function() {
 
 // test versioning CRUD
 tap.test('update object', async (childTest) => {
-  const mocks = await Mock.insertMany([mockOne, mockTwo, mockThree, mockFour, mockFive, mockSix])
+  const mocks = await Mock.insertMany([mockOne, mockTwo, mockThree, mockFour, mockFive, mockSix, mockSeven, mockEight, mockNine, mockTen])
 
   let mock = await Mock.findById(mockOne._id)
   mock.data = "modified"
@@ -96,7 +120,12 @@ tap.test('update object', async (childTest) => {
   await session.commitTransaction()
   session.endSession()
 
+  let versionedMock = await Mock.findVersion(mockOne._id, 1, Mock)
+  childTest.type(versionedMock[constants.VALIDITY].end, Date)
   childTest.equal(mock[constants.VERSION], 2)
+
+  childTest.equal(mock._validity.start.getTime(), versionedMock._validity.end.getTime())
+
   childTest.end()
 })
 
@@ -151,6 +180,8 @@ tap.test('update using updateOne at document level', async (childTest) => {
   let versionedMock = await Mock.findVersion(mockThree._id, 1, Mock)
   childTest.type(versionedMock[constants.VALIDITY].end, Date)
 
+  childTest.equal(mock._validity.start.getTime(), versionedMock._validity.end.getTime())
+
   childTest.end()
 })
 
@@ -161,7 +192,7 @@ tap.test('update using updateOne at model level', async (childTest) => {
   session.startTransaction()
 
   // store _session in document and save
-  let result = await Mock.updateOne({"$and":[{number: {"$gte": 2}},{number: {"$lte": 5}}]}, 
+  let result = await Mock.updateOne({"$and":[{number: {"$gte": 2}}, {number: {"$lte": 5}}]}, 
                                     {"$set": {data: "modified"}}, 
                                     {session, sort: {number: -1}, skip: 1})  
 
@@ -179,17 +210,20 @@ tap.test('update using updateOne at model level', async (childTest) => {
   let versionedMock = await Mock.findVersion(mockFour._id, 1, Mock)
   childTest.type(versionedMock[constants.VALIDITY].end, Date)
 
+  childTest.equal(mock._validity.start.getTime(), versionedMock._validity.end.getTime())
+
   childTest.end()
 })
 
-tap.test('update using updateMany at model level', async (childTest) => {
+tap.test('update using updateMany', async (childTest) => {
   
   // start transaction
   session = await mongoose.startSession()
   session.startTransaction()
 
   // store _session in document and save
-  let result = await Mock.updateMany({number: {"$gte": 5}}, {"$set": {data: "modified"}}, {session})  
+  let result = await Mock.updateMany({"$and":[{number: {"$gte": 5}}, {number: {"$lte": 6}}]}, 
+                                     {"$set": {data: "modified"}}, {session})  
 
   // commit transaction
   await session.commitTransaction()
@@ -206,6 +240,9 @@ tap.test('update using updateMany at model level', async (childTest) => {
   let versionedMockFive = await Mock.findVersion(mockFive._id, 1, Mock)
   childTest.type(versionedMockFive[constants.VALIDITY].end, Date)
 
+  childTest.equal(mockFiveFound._validity.start.getTime(), versionedMockFive._validity.end.getTime())
+
+
   // Check second mock
   let mockSixFound = await Mock.findById(mockSix._id)
   childTest.equal(mockSixFound [constants.VERSION], 2)
@@ -213,17 +250,19 @@ tap.test('update using updateMany at model level', async (childTest) => {
   let versionedMockSix = await Mock.findVersion(mockSix._id, 1, Mock)
   childTest.type(versionedMockSix[constants.VALIDITY].end, Date)
 
+  childTest.equal(mockSixFound._validity.start.getTime(), versionedMockSix._validity.end.getTime())
+
   childTest.end()
 })
 
-tap.test('update using updateMany at model level with no matching documents', async (childTest) => {
+tap.test('update using updateMany with no matching documents', async (childTest) => {
   
   // start transaction
   session = await mongoose.startSession()
   session.startTransaction()
 
   // store _session in document and save
-  let result = await Mock.updateMany({number: {"$gte": 10}}, {"$set": {data: "modified"}}, {session})  
+  let result = await Mock.updateMany({number: {"$gte": 100}}, {"$set": {data: "modified"}}, {session})  
 
   // commit transaction
   await session.commitTransaction()
@@ -236,25 +275,116 @@ tap.test('update using updateMany at model level with no matching documents', as
   childTest.end()
 })
 
-tap.test('update using findOneAndUpdate at model level', async (childTest) => {
+tap.test('update using findOneAndUpdate', async (childTest) => {
   
   // start transaction
   session = await mongoose.startSession()
   session.startTransaction()
 
   // store _session in document and save
-  let result = await Mock.findOneAndUpdate({number: 4}, {"$set": {data: "modified again"}}, {session, new: true})  
+  let result = await Mock.findOneAndUpdate({number: 7}, {"$set": {data: "modified"}}, {session, new: true})  
 
   // commit transaction
   await session.commitTransaction()
   session.endSession()
 
-  childTest.equal(mockFour._id.equals(result._id), true)
-  childTest.equal(result.data, "modified again")
-  childTest.equal(result[constants.VERSION], 3)
+  childTest.equal(mockSeven._id.equals(result._id), true)
+  childTest.equal(result.data, "modified")
+  childTest.equal(result[constants.VERSION], 2)
 
-  let versionedMock = await Mock.findVersion(mockFour._id, 2, Mock)
+  let versionedMock = await Mock.findVersion(mockSeven._id, 1, Mock)
   childTest.type(versionedMock[constants.VALIDITY].end, Date)
+
+  childTest.equal(result._validity.start.getTime(), versionedMock._validity.end.getTime())
+
+  childTest.end()
+})
+
+tap.test('update using findOneAndReplace', async (childTest) => {
+  
+  // start transaction
+  session = await mongoose.startSession()
+  session.startTransaction()
+
+  // store _session in document and save
+  let result = await Mock.findOneAndReplace({number: 8}, {data: "modified"}, {session, new: true})  
+
+  // commit transaction
+  await session.commitTransaction()
+  session.endSession()
+
+  childTest.equal(mockEight._id.equals(result._id), true)
+  childTest.equal(result.data, "modified")
+  childTest.not(result.number, 8)
+  childTest.equal(result[constants.VERSION], 2)
+
+  let versionedMock = await Mock.findVersion(mockEight._id, 1, Mock)
+  childTest.type(versionedMock[constants.VALIDITY].end, Date)
+
+  childTest.equal(result._validity.start.getTime(), versionedMock._validity.end.getTime())
+
+  childTest.end()
+})
+
+tap.test('update using replaceOne at model level', async (childTest) => {
+  
+  // start transaction
+  session = await mongoose.startSession()
+  session.startTransaction()
+
+  // store _session in document and save
+  let result = await Mock.replaceOne({number: 9}, {data: "modified"}, {session})  
+
+  // commit transaction
+  await session.commitTransaction()
+  session.endSession()
+
+  childTest.equal(result.n, 1)
+  childTest.equal(result.nModified, 1)
+  childTest.equal(result.ok, 1)
+
+  let mock = await Mock.findById(mockNine._id)
+  childTest.equal(mock[constants.VERSION], 2)
+  childTest.equal(mock.data, "modified")
+  childTest.not(mock.number, 9)
+
+  let versionedMock = await Mock.findVersion(mockNine._id, 1, Mock)
+  childTest.type(versionedMock[constants.VALIDITY].end, Date)
+
+  childTest.equal(mock._validity.start.getTime(), versionedMock._validity.end.getTime())
+
+  childTest.end()
+})
+
+tap.test('update using replaceOne at document level', async (childTest) => {
+
+  let mock = await Mock.findById(mockTen._id)
+
+  // start transaction
+  session = await mongoose.startSession()
+  session.startTransaction()
+
+  // store _session in document and save
+  let result = await mock.replaceOne({data: "modified 10"}, {session})  
+
+  // commit transaction
+  await session.commitTransaction()
+  session.endSession()
+
+  childTest.equal(result.n, 1)
+  childTest.equal(result.nModified, 1)
+  childTest.equal(result.ok, 1)
+
+  let foundMock = await Mock.findById(mockTen._id)
+
+  childTest.equal(foundMock[constants.VERSION], 2)
+  childTest.equal(foundMock.data, "modified 10")
+  childTest.not(foundMock.number, 10)
+
+  let versionedMock = await Mock.findVersion(mockTen._id, 1, Mock)
+  childTest.type(versionedMock[constants.VALIDITY].end, Date)
+
+  childTest.equal(foundMock._validity.start.getTime(), versionedMock._validity.end.getTime())
 
   childTest.end()
 })
