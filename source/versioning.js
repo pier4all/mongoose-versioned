@@ -2,6 +2,7 @@ const util = require("./util")
 const constants = require("./constants")
 const ObjectId = require('mongoose').Types.ObjectId
 const { fromJS } = require('immutable')
+const commons = require("./commons")
 "use strict"
 
 module.exports = function (schema, options) {
@@ -229,46 +230,22 @@ module.exports = function (schema, options) {
 
     //updateOne (includes model/query level)
     schema.pre('updateOne', async function (next) {
-
-        // load the base version
-        let base = await this.model
-            .findOne(this._conditions)
-            .then((foundBase) => {
-            if (foundBase === null) {
-                next()
-            }
-            return foundBase})
-        
-        // get the transaction session
-        const session = this.options.session
- 
-        // store the session for the save method
-        base[constants.SESSION] = session
-        
-        await base.save({session})
-
-        next()
+        await commons.filterAndUpdateOne(this, next)
     })
 
     //updateOne (query level)
     schema.pre('updateMany', async function (next) {
+        await commons.filterAndUpdate(this, next)
+    })
 
-        // load the base version
-        let bases = await this.model
-            .find(this._conditions)
-            .then((foundBases) => {
-                return foundBases})
-        
-        // get the transaction session
-        const session = this.options.session
- 
-        for(base of bases) {
-        
-            // store the session for the save method
-            base[constants.SESSION] = session
-            
-            await base.save({session})
-        }
+    // findOneAndUpdate (query level)
+    schema.pre('findOneAndUpdate', async function (next) {
+        await commons.filterAndUpdateOne(this, next)
+    })
+    
+    // model level middleware
+    schema.pre('insertMany', async function (next, docs) {
+        docs.forEach(d => { d[constants.VERSION] = 1; })
         next()
     })
 
@@ -282,13 +259,6 @@ module.exports = function (schema, options) {
     // findOneAndDelete
     // findOneAndRemove
     // findOneAndReplace
-    // findOneAndUpdate
     // replaceOne
-    
-    // model level middleware
-    schema.pre('insertMany', async function (next, docs) {
-        docs.forEach(d => { d[constants.VERSION] = 1; })
-        next()
-    })
 
 }
