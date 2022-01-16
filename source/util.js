@@ -35,4 +35,4 @@ exports.isValidVersion = (v) => {
     if (isNaN(parseInt(v))) return false// ...and ensure strings of whitespace fail
     if (parseInt(v) < 1) return false
     return true
-  }
+}

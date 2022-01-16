@@ -150,9 +150,6 @@ module.exports = function (schema, options) {
             return next()
         }
 
-        // get the transaction session
-        const session = {session: this._session}
-        delete this._session
 
         let baseVersion = this[constants.VERSION]
         // load the base version
@@ -171,6 +168,10 @@ module.exports = function (schema, options) {
             throw (err)
         }
 
+        // get the transaction session
+        const session = {session: this._session}
+        delete this._session
+
         // clone base document to create an archived version
         let clone = fromJS(base).toJS()
 
@@ -187,6 +188,13 @@ module.exports = function (schema, options) {
         }
 
         this[constants.VALIDITY] = { "start": now }
+
+        // Special case for the findAndDelete to include deletion information
+        if (this[constants.DELETION]) {
+            let delete_info = this[constants.DELETION] 
+            delete this[constants.DELETION]
+            clone[constants.DELETER] = delete_info[constants.DELETER]
+        }
 
         // Increment version number
         this[constants.VERSION] = this[constants.VERSION] + 1
@@ -212,6 +220,7 @@ module.exports = function (schema, options) {
 
         let clone = fromJS(this.toObject()).toJS()
 
+        // Build Vermongo historical ID
         clone[constants.ID] = { [constants.ID]: this[constants.ID], [constants.VERSION]: this[constants.VERSION] }
 
         const now = new Date()
@@ -236,7 +245,7 @@ module.exports = function (schema, options) {
 
     //updateOne (includes model/query level)
     schema.pre('updateOne', async function (next) {
-        await commons.filterAndUpdateOne(this, next)
+        await commons.filterAndModifyOne(this, next)
     })
 
     //updateOne (query level)
@@ -246,27 +255,37 @@ module.exports = function (schema, options) {
 
     // findOneAndUpdate (query level)
     schema.pre('findOneAndUpdate', async function (next) {
-        await commons.filterAndUpdateOne(this, next)
+        await commons.filterAndModifyOne(this, next)
     })
     
     // findOneAndReplace (query level)
     schema.pre('findOneAndReplace', async function (next) {
-        await commons.filterAndUpdateOne(this, next)
+        await commons.filterAndModifyOne(this, next)
     })
 
     // findOneAndReplace (query level)
     schema.pre('replaceOne', async function (next) {
-        await commons.filterAndUpdateOne(this, next)
+        await commons.filterAndModifyOne(this, next)
     })
 
-    //TODO (document level middleware)
-    //deleteOne
+    //deleteOne (includes model/query level)
+    schema.pre('deleteOne', async function (next) {
+        await commons.filterAndModifyOne(this, next)
+    })
+
+    //deleteOne (includes model/query level)
+    schema.pre('findOneAndRemove', async function (next) {
+        await commons.filterAndModifyOne(this, next)
+    })
+    
+    // TODO (document level middleware)
+    // deleteOne
+    // deleteOne
+
     // query level middleware
     // TODO (query level middleware)
     // deleteMany
-    // deleteOne
     // findOneAndDelete
     // findOneAndRemove
-    // replaceOne
 
 }
