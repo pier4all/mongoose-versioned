@@ -243,12 +243,12 @@ module.exports = function (schema, options) {
         next()
     })
 
-    //updateOne (includes model/query level)
+    //updateOne (includes document and model/query level)
     schema.pre('updateOne', async function (next) {
         await commons.filterAndModifyOne(this, next)
     })
 
-    //updateOne (query level)
+    //updateMany (query level)
     schema.pre('updateMany', async function (next) {
         await commons.filterAndUpdate(this, next)
     })
@@ -268,24 +268,23 @@ module.exports = function (schema, options) {
         await commons.filterAndModifyOne(this, next)
     })
 
-    //deleteOne (includes model/query level)
+    //deleteOne (includes document and model/query level)
     schema.pre('deleteOne', async function (next) {
         await commons.filterAndModifyOne(this, next)
     })
 
-    //deleteOne (includes model/query level)
+    //findOneAndRemove (query level)
     schema.pre('findOneAndRemove', async function (next) {
         await commons.filterAndModifyOne(this, next)
     })
-    
-    // TODO (document level middleware)
-    // deleteOne
-    // deleteOne
 
-    // query level middleware
-    // TODO (query level middleware)
-    // deleteMany
-    // findOneAndDelete
-    // findOneAndRemove
+    //findOneAndRemove (query level)
+    schema.pre('findOneAndDelete', async function (next) {
+    await commons.filterAndModifyOne(this, next)
+    })
 
+    //deleteMany (query level)
+    schema.pre('deleteMany', async function (next) {
+        await commons.filterAndUpdate(this, next)
+    })
 }

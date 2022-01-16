@@ -103,6 +103,18 @@ const mockFifteen = {
   number: 15
 }
 
+const mockSixteen = { 
+  _id: new mongoose.Types.ObjectId(),
+  data: "sixteenth mock test",
+  number: 16
+}
+
+const mockSeventeen = { 
+  _id: new mongoose.Types.ObjectId(),
+  data: "seventeenth mock test",
+  number: 17
+}
+
 tap.before(async function() { 
 
   mongoServer = await MongoMemoryReplSet.create({ replSet: { count: 4 } })
@@ -130,7 +142,7 @@ tap.before(async function() {
   Mock = mongoose.model(NAME, testSchema)
 
   await Mock.insertMany([mockOne, mockTwo, mockThree, mockFour, mockFive, mockSix, mockSeven, mockEight, mockNine, mockTen,
-    mockEleven, mockTwelve, mockThirteen, mockFourteen, mockFifteen])
+    mockEleven, mockTwelve, mockThirteen, mockFourteen, mockFifteen, mockSixteen, mockSeventeen])
   
 })
 
@@ -514,7 +526,7 @@ tap.test('delete using deleteOne at document level', async (childTest) => {
   childTest.end()
 })
 
-tap.test('delete using findOneAndRemove at model level', async (childTest) => {
+tap.test('delete using findOneAndRemove at model/query level', async (childTest) => {
   
   // start transaction
   session = await mongoose.startSession()
@@ -535,6 +547,100 @@ tap.test('delete using findOneAndRemove at model level', async (childTest) => {
   let versionedMock = await Mock.findVersion(mockThirteen._id, 1, Mock)
   childTest.type(versionedMock[constants.VALIDITY].end, Date)
   childTest.equal(versionedMock[constants.DELETER], constants.DEFAULT_DELETER)
+
+  childTest.end()
+})
+
+tap.test('delete using findOneAndDelete at model/query level', async (childTest) => {
+  
+  // start transaction
+  session = await mongoose.startSession()
+  session.startTransaction()
+
+  // store _session in document and save
+  let result = await Mock.findOneAndDelete({number: 14}, {session})  
+
+  // commit transaction
+  await session.commitTransaction()
+  session.endSession()
+
+  childTest.equal(mockFourteen._id.equals(result._id), true)
+
+  let mock = await Mock.findById(mockFourteen._id)
+  childTest.equal(( typeof mock === 'undefined' || mock === null ), true)
+
+  let versionedMock = await Mock.findVersion(mockFourteen._id, 1, Mock)
+  childTest.type(versionedMock[constants.VALIDITY].end, Date)
+  childTest.equal(versionedMock[constants.DELETER], constants.DEFAULT_DELETER)
+
+  childTest.end()
+})
+
+tap.test('delete using deleteMany at model/query level', async (childTest) => {
+  
+  // start transaction
+  session = await mongoose.startSession()
+  session.startTransaction()
+
+  // store _session in document and save
+  let result = await Mock.deleteMany({"$and":[{number: {"$gte": 15}}, {number: {"$lte": 16}}]}, {session})  
+
+  // commit transaction
+  await session.commitTransaction()
+  session.endSession()
+
+  childTest.equal(result.n, 2)
+  childTest.equal(result.deletedCount, 2)
+  childTest.equal(result.ok, 1)
+
+  // check first deleted mock
+  let mockFirst = await Mock.findById(mockFifteen._id)
+  childTest.equal(( typeof mockFirst === 'undefined' || mockFirst === null ), true)
+
+  let versionedMockFirst = await Mock.findVersion(mockFifteen._id, 1, Mock)
+  childTest.type(versionedMockFirst[constants.VALIDITY].end, Date)
+  childTest.equal(versionedMockFirst[constants.DELETER], constants.DEFAULT_DELETER)
+
+  // check second deleted mock
+  let mockSecond = await Mock.findById(mockSixteen._id)
+  childTest.equal(( typeof mockSecond === 'undefined' || mockSecond === null ), true)
+
+  let versionedMockSecond = await Mock.findVersion(mockSixteen._id, 1, Mock)
+  childTest.type(versionedMockSecond[constants.VALIDITY].end, Date)
+  childTest.equal(versionedMockSecond[constants.DELETER], constants.DEFAULT_DELETER)
+
+  childTest.end()
+})
+
+tap.test('delete using deleteMany with custom deleter', async (childTest) => {
+   
+  // start transaction
+  session = await mongoose.startSession()
+  session.startTransaction()
+
+  // include custom deleter in options
+  let options = {session}
+  options[constants.DELETION] = {}
+  options[constants.DELETION][constants.DELETER] = "test"
+
+  // store _session in document and save
+  let result = await Mock.deleteMany({"$and":[{number: {"$gte": 17}}, {number: {"$lte": 17}}]}, options)  
+
+  // commit transaction
+  await session.commitTransaction()
+  session.endSession()
+
+  childTest.equal(result.n, 1)
+  childTest.equal(result.deletedCount, 1)
+  childTest.equal(result.ok, 1)
+
+  // check deleted mock
+  let mock = await Mock.findById(mockSeventeen._id)
+  childTest.equal(( typeof mock === 'undefined' || mock === null ), true)
+
+  let versionedMock = await Mock.findVersion(mockSeventeen._id, 1, Mock)
+  childTest.type(versionedMock[constants.VALIDITY].end, Date)
+  childTest.equal(versionedMock[constants.DELETER], "test")
 
   childTest.end()
 })

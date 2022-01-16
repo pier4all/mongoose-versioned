@@ -47,6 +47,13 @@ exports.filterAndUpdate = async (query, next) => {
     
         // store the session for the save method
         base[constants.SESSION] = session
+
+        if (!query._update) {
+            // special case for delete operations
+            let delete_info = query.options[constants.DELETION] || {}
+            delete_info[constants.DELETER] = delete_info[constants.DELETER] || constants.DEFAULT_DELETER
+            base[constants.DELETION] = delete_info
+        } 
         
         await base.save({session})
     }
