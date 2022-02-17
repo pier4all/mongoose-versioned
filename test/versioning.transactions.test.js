@@ -285,6 +285,45 @@ tap.test('update using updateOne not existing document does not update', async (
   childTest.end()
 })
 
+tap.test('update rollback using updateOne at document level is consistent', async (childTest) => {
+
+  let mock = await Mock.findById(mockThree._id)
+  let existingId = mockFour._id
+
+  // start transaction
+  session = await mongoose.startSession()
+  session.startTransaction()
+
+  let result = undefined
+
+  try {
+  
+    // update that should fail (modifying _id to an existent one)
+    result = await mock.updateOne({"$set": {"_id": existingId}}, {session})  
+  
+    // commit transaction
+    await session.commitTransaction()
+    session.endSession()
+
+  } catch (e) {
+    // rollback if update fails
+    if (session) session.endSession()
+  }
+
+  // result should be undefined as update should not succeed
+  childTest.equal(result, undefined)
+
+  // no archived version should exist (rollback)
+  const archivedMock = await Mock.VersionedModel.findById({ _id: mockThree._id, _version: mock._version })
+  childTest.equal(archivedMock, null)
+
+  // the current document should not increase its version
+  mock = await Mock.findById(mockThree._id)
+  childTest.equal(mock[constants.VERSION], 2)
+
+  childTest.end()
+})
+
 tap.test('update using updateMany', async (childTest) => {
   
   // start transaction

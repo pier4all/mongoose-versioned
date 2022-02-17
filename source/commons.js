@@ -32,7 +32,7 @@ exports.filterAndModifyOne = async (query, next) => {
     next()
 }
 
-exports.filterAndUpdate = async (query, next) => {
+exports.filterAndModifyMany = async (query, next) => {
     
     // load the base version
     let bases = await query.model

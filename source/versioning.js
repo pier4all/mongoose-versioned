@@ -250,7 +250,7 @@ module.exports = function (schema, options) {
 
     //updateMany (query level)
     schema.pre('updateMany', async function (next) {
-        await commons.filterAndUpdate(this, next)
+        await commons.filterAndModifyMany(this, next)
     })
 
     // findOneAndUpdate (query level)
@@ -285,6 +285,6 @@ module.exports = function (schema, options) {
 
     //deleteMany (query level)
     schema.pre('deleteMany', async function (next) {
-        await commons.filterAndUpdate(this, next)
+        await commons.filterAndModifyMany(this, next)
     })
 }
