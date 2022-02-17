@@ -5,7 +5,7 @@ exports.filterAndModifyOne = async (query, next) => {
     // load the base version
     let base = await queryOne (query, next)
     if (base === null) next()
-    else {    
+    else {
         // get the transaction session
         const session = query.options.session
 
@@ -17,7 +17,7 @@ exports.filterAndModifyOne = async (query, next) => {
             let delete_info = query.options[constants.DELETION] || {}
             delete_info[constants.DELETER] = delete_info[constants.DELETER] || constants.DEFAULT_DELETER
             base[constants.DELETION] = delete_info
-        } 
+        }
 
         await base.save({session})
 
@@ -26,25 +26,23 @@ exports.filterAndModifyOne = async (query, next) => {
             query._update[constants.VERSION] = base[constants.VERSION]
             query._update[constants.VALIDITY] = base[constants.VALIDITY]
         }
-        
+
     }
 
     next()
 }
 
 exports.filterAndModifyMany = async (query, next) => {
-    
+
     // load the base version
     let bases = await query.model
         .find(query._conditions)
-        .then((foundBases) => {
-            return foundBases})
     
     // get the transaction session
     const session = query.options.session
 
     for(base of bases) {
-    
+
         // store the session for the save method
         base[constants.SESSION] = session
 
@@ -53,8 +51,8 @@ exports.filterAndModifyMany = async (query, next) => {
             let delete_info = query.options[constants.DELETION] || {}
             delete_info[constants.DELETER] = delete_info[constants.DELETER] || constants.DEFAULT_DELETER
             base[constants.DELETION] = delete_info
-        } 
-        
+        }
+
         await base.save({session})
     }
     next()
@@ -67,7 +65,7 @@ getQueryOptions = (query) => {
 
     if (query.op.startsWith("find")) {
         sort = query.options.sort || {}
-    } 
+    }
 
     return {sort, skip}
 }

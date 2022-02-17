@@ -33,7 +33,7 @@ t.test('cloned schema fields not unique', t => {
   })
   let clone = util.cloneSchema(originalSchema, mongoose)
   t.equal(originalSchema.paths.data._index.unique, true)
-  t.equal(clone.paths.data._index.unique, false)
+  t.equal(!!clone.paths.data._index?.unique, false)
   t.end()
 })
 

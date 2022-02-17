@@ -4,7 +4,7 @@ const versioning = require('../source/versioning')
 const constants = require('../source/constants')
 
 const mongoose = require('mongoose')
-mongoose.Promise = require('bluebird')
+//mongoose.Promise = require('bluebird')
 let Schema = mongoose.Schema
 
 // start in memory server
@@ -17,22 +17,22 @@ let mongoServer
 const tap = require('tap')
 
 // data
-const mockOne = { 
+const mockOne = {
   _id: new mongoose.Types.ObjectId(),
-  data: "first mock test" 
+  data: "first mock test"
 }
-const mockTwo = { 
+const mockTwo = {
   _id: new mongoose.Types.ObjectId(),
-  data: "second mock test" 
+  data: "second mock test"
 }
 
-const mockThree = { 
+const mockThree = {
   _id: new mongoose.Types.ObjectId(),
-  data: "third mock test" 
+  data: "third mock test"
 }
-const mockFour = { 
+const mockFour = {
   _id: new mongoose.Types.ObjectId(),
-  data: "fourth mock test" 
+  data: "fourth mock test"
 }
 
 // auxiliar global variables
@@ -40,30 +40,30 @@ let Mock
 let initialMock
 
 // test initialization
-tap.before(async function() { 
+tap.before(async function() {
 
   mongoServer = await MongoMemoryServer.create()
-  
+
   let mongoUri = mongoServer.getUri()
 
   const mongooseOpts = {
-    useUnifiedTopology: true, 
-    useNewUrlParser: true, 
-    useFindAndModify: false
+    useUnifiedTopology: true,
+    useNewUrlParser: true,
+    //useFindAndModify: false
   }
 
   await mongoose.connect(mongoUri, mongooseOpts)
 
   console.log(chalk.bold.green(`MongoDB successfully connected to ${mongoUri}`))
-  
+
   // test schema definition
   const NAME = "test"
   let testSchema = new Schema({
     data : { type: String, required: false, unique: false },
   }, { autoIndex: false })
-  
+
   testSchema.plugin(versioning, { options: NAME + "s.versioning", ensureIndex: true})
-  
+
   Mock = mongoose.model(NAME, testSchema)
 
 })
@@ -78,7 +78,7 @@ tap.test('create new object', async (childTest) => {
 tap.test('update object', async (childTest) => {
   let mock = await Mock.findById(mockOne._id)
   mock.data = "modified"
-  mock = await mock.save()  
+  mock = await mock.save()
   childTest.equal(mock[constants.VERSION], 2)
   childTest.end()
 })
@@ -110,7 +110,7 @@ tap.test('find old valid version', async (childTest) => {
 })
 
 tap.test('trying to update old version fails', async (childTest) => {
-  try {      
+  try {
     initialMock.data = "test not update old"
     await initialMock.save()
     childTest.fail('Should not get here')
@@ -127,7 +127,7 @@ tap.test('delete object moves it to archive', async (childTest) => {
 
   const noMock = await Mock.findValidVersion(mockOne[constants.ID], new Date(), Mock)
   childTest.equal(noMock, null)
-  
+
   const archivedMock = await Mock.VersionedModel.findById({ _id: mockOne[constants.ID], _version: 2 })
   childTest.equal(archivedMock[constants.DELETER], "test")
 
@@ -136,7 +136,7 @@ tap.test('delete object moves it to archive', async (childTest) => {
 
 tap.test('delete object has default deleter if not provided', async (childTest) => {
   const mock = await new Mock(mockTwo).save()
-  
+
   await mock.remove()
 
   const archivedMock = await Mock.VersionedModel.findById({ _id: mockTwo[constants.ID], _version: 1 })
@@ -146,7 +146,7 @@ tap.test('delete object has default deleter if not provided', async (childTest) 
 })
 
 tap.test('trying to update deleted version fails', async (childTest) => {
-  try {      
+  try {
     initialMock.data = "test not update deleted"
     await initialMock.save()
     childTest.fail('Should not get here')
@@ -183,7 +183,7 @@ tap.test('insert many objects', async (childTest) => {
   childTest.end()
 })
 
-tap.teardown(async function() { 
+tap.teardown(async function() {
   await mongoose.disconnect()
   await mongoServer.stop()
   console.log(chalk.bold.red('MongoDB disconnected'))
@@ -207,8 +207,8 @@ function findIndex(refIndex, indexes) {
           break
         }
       }
-      if (indexFound) break 
-    } 
+      if (indexFound) break
+    }
   }
   return indexFound
 }
