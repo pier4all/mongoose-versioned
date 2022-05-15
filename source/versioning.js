@@ -19,17 +19,18 @@ module.exports = function (schema, options) {
     options.logError = options.logError || false
     options.ensureIndex = options.ensureIndex ?? true
     options.mongoose = options.mongoose || require('mongoose')
-    let mongoose = options.mongoose
+    const mongoose = options.mongoose
+    const connection = options.connection || mongoose
 
     // Make sure there's no reserved paths
     constants.RESERVED_FIELDS.map(
         key =>  { if (schema.path(key)) throw Error(`Schema can't have a path called "${key}"`) }
     )
-    
+
     // create the versioned schema
     let versionedSchema = util.cloneSchema(schema, mongoose)
 
-    // Copy schema options in the versioned schema    
+    // Copy schema options in the versioned schema
     Object.keys(options).forEach(key => versionedSchema.set(key, options[key]));
 
     // Define Custom fields
@@ -86,7 +87,7 @@ module.exports = function (schema, options) {
     versionedSchema.set("versionKey", false)
 
     // Add reference to model to original schema
-    schema.statics.VersionedModel = mongoose.model(options.collection, versionedSchema)
+    schema.statics.VersionedModel = connection.model(options.collection, versionedSchema)
 
     // calling create index from MongoDB to be sure index is created
     if (options.ensureIndex)
@@ -103,8 +104,8 @@ module.exports = function (schema, options) {
         query[validity_start] = { $lte: date }
 
         let current = await model.findOne(query)
-        if (current) 
-            return current 
+        if (current)
+            return current
 
         // 2. if not, check versioned collection
         let versionedModel = schema.statics.VersionedModel
@@ -150,7 +151,6 @@ module.exports = function (schema, options) {
             return next()
         }
 
-
         let baseVersion = this[constants.VERSION]
         // load the base version
         let base = await this.collection
@@ -191,7 +191,7 @@ module.exports = function (schema, options) {
 
         // Special case for the findAndDelete to include deletion information
         if (this[constants.DELETION]) {
-            let delete_info = this[constants.DELETION] 
+            let delete_info = this[constants.DELETION]
             delete this[constants.DELETION]
             clone[constants.DELETER] = delete_info[constants.DELETER]
         }
@@ -201,9 +201,7 @@ module.exports = function (schema, options) {
 
         // Save versioned document
         var versionedDoc = new schema.statics.VersionedModel(clone)
-
         await versionedDoc.save(session)
-
         next()
         return null
     })
@@ -257,7 +255,7 @@ module.exports = function (schema, options) {
     schema.pre('findOneAndUpdate', async function (next) {
         await commons.filterAndModifyOne(this, next)
     })
-    
+
     // findOneAndReplace (query level)
     schema.pre('findOneAndReplace', async function (next) {
         await commons.filterAndModifyOne(this, next)

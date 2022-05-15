@@ -1,6 +1,6 @@
 {
     "name": "mongoose-versioned",
-    "version": "1.2.0",
+    "version": "1.2.1",
     "description": "Versioning module for MongoDB based in mongoose. It uses a main collection for the current data and a shadow collection for the old versions.",
     "main": "source/versioning.js",
     "repository": {
