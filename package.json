@@ -17,7 +17,8 @@
         "versioning"
     ],
     "scripts": {
-        "test": "tap test/*.test.js"
+        "test": "tap test/*.test.js",
+        "preinstall": "npx npm-force-resolutions"
     },
     "author": {
         "name": "Lucía de Espona Pernas",
@@ -41,6 +42,9 @@
     "devDependencies": {
         "chalk": "^4.1.1",
         "mongodb-memory-server": "^8.0.4",
-        "tap": "^15.1.5"
+        "tap": "^15.2.3"
+    },
+    "resolutions": {
+        "minimist": "^1.2.6"
     }
 }
