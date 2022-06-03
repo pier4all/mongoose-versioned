@@ -1,6 +1,6 @@
 {
     "name": "mongoose-versioned",
-    "version": "1.2.3",
+    "version": "1.2.4",
     "description": "Versioning module for MongoDB based in mongoose. It uses a main collection for the current data and a shadow collection for the old versions.",
     "main": "source/versioning.js",
     "repository": {
@@ -18,7 +18,7 @@
     ],
     "scripts": {
         "test": "tap test/*.test.js",
-        "preinstall": "npx npm-force-resolutions"
+        "preinstall": "npm install --package-lock-only --ignore-scripts && npx npm-force-resolutions"
     },
     "author": {
         "name": "Lucía de Espona Pernas",
