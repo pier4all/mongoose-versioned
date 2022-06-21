@@ -146,6 +146,10 @@ module.exports = function (schema, options) {
     // document level middleware
     schema.pre('save', async function (next) {
 
+        if (!this.isVersionToBeUpdated()) {
+            return next()
+        }
+        
         if (this.isNew) {
             this[constants.VERSION] = 1
             return next()
