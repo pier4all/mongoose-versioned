@@ -115,6 +115,8 @@ module.exports = function (schema, options) {
         query[validity_end] = { $gt: date }
 
         let version = await versionedModel.findOne(query)
+        // We are modifying _id here in order to match configList's id.
+        version._id = version._id._id ? version._id._id : version._id;
         return version
     }
 
@@ -140,6 +142,8 @@ module.exports = function (schema, options) {
         query[constants.ID] = versionedId
 
         let document = await versionedModel.findOne(query)
+        // We are modifying _id here in order to match configList's id.
+        document._id = document._id._id ? document._id._id : document._id;
         return document
     }
 
