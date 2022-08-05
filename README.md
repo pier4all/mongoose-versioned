@@ -19,6 +19,8 @@ This package requires mongoose and it is added as a plugin to each individual mo
 ```javascript
 // import versioning and mongoose related dependencies
 const versioning = require('mongoose-versioned')
+const constants = require('mongoose-versioned/source/constants')
+
 const mongoose = require('mongoose')
 mongoose.Promise = require('bluebird')
 let Schema = mongoose.Schema
@@ -65,6 +67,8 @@ const versionItems = async(mongodb_uri) => {
 
   // update
   savedItem.name = "modified item"
+  savedItem[constants.EDITOR] = "editing user"
+  
   let updatedItem = await savedItem.save()
   console.log(`updated item with name: ${updatedItem.name}, version: ${updatedItem._version}`)
 
@@ -91,7 +95,9 @@ Transactions can be used to ensure the database remains in a consistent state ev
 The transaction should be stated before calling the update/delete operation and in addition the session should be stored in a reserved "_session" inside the document and passed as an option to save/delete method.
 
 ```javascript
-const versioning = require('./source/versioning')
+const versioning = require('mongoose-versioned')
+const constants = require('mongoose-versioned/source/constants')
+
 const mongoose = require('mongoose')
 mongoose.Promise = require('bluebird')
 
@@ -103,7 +109,7 @@ try {
   session.startTransaction()
 
   // store session in the document
-  document[c.SESSION] = session
+  document[constants.SESSION] = session
 
   // save sending the session as option
   await document.save({session})
