@@ -65,10 +65,15 @@ const versionItems = async(mongodb_uri) => {
 
   let id = savedItem._id
 
-  // update
+  // update document info
   savedItem.name = "modified item"
-  savedItem[constants.EDITOR] = "editing user"
+
+  // add edition information
+  let edition_info = {}
+  edition_info[constants.EDITOR] = "editing user"
+  savedItem[constants.EDITION] = edition_info
   
+  // perform the update
   let updatedItem = await savedItem.save()
   console.log(`updated item with name: ${updatedItem.name}, version: ${updatedItem._version}`)
 
