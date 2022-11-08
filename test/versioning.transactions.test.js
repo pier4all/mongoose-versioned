@@ -696,9 +696,9 @@ tap.test('bulk insert objects', async (childTest) => {
   let documents = [new Mock(mockEighteen), new Mock(mockNineteen), new Mock(mockTwenty)]
 
   // store _session in document and save
-  let res = await Mock.saveMany(documents, {}, Mock)
+  let res = await Mock.bulkSaveVersioned(documents, [], Mock)
   
-  childTest.equal(res.nInserted,3)
+  childTest.equal(res.nInserted, 3)
 
   let mock = await Mock.findById(mockEighteen._id)
   childTest.type(mock[constants.VALIDITY].start, Date)
@@ -721,17 +721,20 @@ tap.test('bulk update objects', async (childTest) => {
   session = await mongoose.startSession()
   session.startTransaction()
 
-  let res = await Mock.saveMany(updates, originals, Mock, {session})
+  let res = await Mock.bulkSaveVersioned(updates, originals, Mock, {session})
 
   // commit transaction
   await session.commitTransaction()
   session.endSession()
 
-  childTest.equal(res.nModified,3)
+  childTest.equal(res.nModified, 3)
 
   let mock = await Mock.findById(mockEighteen._id)
   childTest.type(mock[constants.VALIDITY].start, Date)
   childTest.equal(mock[constants.VERSION], 2)
+
+  let versionedMock = await Mock.findVersion(mockEighteen._id, 1, Mock)
+  childTest.type(versionedMock[constants.VALIDITY].end, Date)
 
   childTest.end()
 })
@@ -752,9 +755,8 @@ tap.test('bulk update objects with different lengths fail', async (childTest) =>
 
   let res = undefined
   try {
-
     // update that should fail (modifying _id to an existent one)
-    res = await Mock.saveMany(updates, originals, Mock, {session})
+    res = await Mock.bulkSaveVersioned(updates, originals, Mock, {session})
 
     // commit transaction
     await session.commitTransaction()
@@ -773,6 +775,96 @@ tap.test('bulk update objects with different lengths fail', async (childTest) =>
   childTest.end()
 })
 
+// test versioning CRUD
+tap.test('bulk delete objects', async (childTest) => {
+  let documents = [ await Mock.findById(mockEighteen._id), await Mock.findById(mockNineteen._id), await Mock.findById(mockTwenty._id)]
+
+  // start session and save
+  session = await mongoose.startSession()
+  session.startTransaction()
+
+  let res = await Mock.bulkDeleteVersioned(documents, Mock, {session})
+
+  // commit transaction
+  await session.commitTransaction()
+  session.endSession()
+
+  childTest.equal(res.nRemoved, 3)
+
+  let mock = await Mock.findById(mockEighteen._id)
+  childTest.same(mock, undefined)
+
+  let versionedMock = await Mock.findVersion(mockEighteen._id, 2, Mock)
+  childTest.type(versionedMock[constants.VALIDITY].end, Date)
+
+  childTest.end()
+})
+
+// test versioning CRUD
+tap.test('bulk delete already deleted objects', async (childTest) => {
+  let documents = [ await Mock.findVersion(mockEighteen._id, 2, Mock), 
+                    await Mock.findVersion(mockNineteen._id, 2, Mock), 
+                    await Mock.findVersion(mockTwenty._id, 2, Mock)]
+
+  for (let document of documents){
+    document[constants.VALIDITY] = {}
+  }
+
+  let res = undefined
+  
+  try {
+    res = await Mock.bulkDeleteVersioned(documents, Mock)
+  } catch(e) { }
+
+  childTest.same(res, undefined)
+  childTest.end()
+})
+
+// test versioning CRUD
+tap.test('bulk update already deleted objects', async (childTest) => {
+  let originals = [ await Mock.findVersion(mockEighteen._id, 2, Mock), 
+                    await Mock.findVersion(mockNineteen._id, 2, Mock), 
+                    await Mock.findVersion(mockTwenty._id, 2, Mock)]
+  
+  let updates = [ await Mock.findVersion(mockEighteen._id, 2, Mock), 
+                    await Mock.findVersion(mockNineteen._id, 2, Mock), 
+                    await Mock.findVersion(mockTwenty._id, 2, Mock)]
+
+  for (let document of updates){
+    document.data = "edited " + document.data
+  }
+
+  let res = undefined
+  
+  try {
+    res = await Mock.bulkSaveVersioned(updates, originals, Mock)
+  } catch(e) { }
+
+  childTest.same(res, undefined)
+
+  childTest.end()
+})
+
+// test versioning CRUD
+tap.test('bulk update wrong version documents', async (childTest) => {
+  let originals = [ await Mock.findVersion(mockEighteen._id, 2, Mock)]
+  
+  let updates = [ await Mock.findVersion(mockEighteen._id, 1, Mock)]
+
+  for (let document of updates){
+    document.data = "edited " + document.data
+  }
+
+  let res = undefined
+  
+  try {
+    res = await Mock.bulkSaveVersioned(updates, originals, Mock)
+  } catch(e) { }
+
+  childTest.same(res, undefined)
+
+  childTest.end()
+})
 
 tap.teardown(async function() {
   await mongoose.disconnect()

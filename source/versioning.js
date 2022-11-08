@@ -143,8 +143,8 @@ module.exports = function (schema, options) {
         return document
     }
 
-    // Add special find by id and version number that includes versioning
-    schema.statics.saveMany = async (documents, originals, model, options={}) => {
+    // Add special bulk save that supports versioning
+    schema.statics.bulkSaveVersioned = async (documents, originals, model, options={}) => {
 
         // check inputs have the proper length
         if(documents.length != originals.length && originals.length>0) {
@@ -159,31 +159,84 @@ module.exports = function (schema, options) {
             // Set fields for new
             documents[i][constants.VALIDITY] = { "start": now }
 
-            let baseVersion = documents[i][constants.VERSION] || 0
-            documents[i][constants.VERSION] = baseVersion + 1
-
             if (originals.length>0) {
                 // set fields for original
                 originals[i][constants.VALIDITY]["end"] = now
+
+                // check and increase version number
+                if (documents[i][constants.VERSION] == originals[i][constants.VERSION]){
+                    documents[i][constants.VERSION] = documents[i][constants.VERSION] + 1
+                } else {
+                    let err = new Error('document and original versions do not match for _id: ' +  documents[i]._id)
+                    throw (err)
+                }
+            } else {
+                documents[i][constants.VERSION] = 1
             }
         }
 
         let resUpdated = undefined
         let resVersioned = undefined
-
+        
         if (originals.length>0) {
-            let versionedModel = schema.statics.VersionedModel
-            resVersioned = await versionedModel.bulkSave(originals, options)
-
-            // todo call buildBulkWriteOperations
+            //call buildBulkWriteOperations for the modified documents to avoid middleware hooks
             let ops = model.buildBulkWriteOperations(documents, { skipValidation: true});
             resUpdated = await model.bulkWrite(ops, options)
+
+            // call mongoos bulkSave since the versioned collection has no middleware hooks
+            let versionedModel = schema.statics.VersionedModel
+            resVersioned = await versionedModel.bulkSave(originals, options)
+            
+            // raise an error if not all the documents were modified
+            if (resUpdated.nModified < documents.length) {
+                let err = new Error('bulk update failed, only ' + resUpdated.nModified + ' out of ' + documents.length + ' were updated')
+                throw (err)               
+            }
 
         } else {
             resUpdated = await model.bulkSave(documents, options)
         }
 
         return resUpdated
+    }
+
+    // Add special find by id and version number that includes versioning
+    schema.statics.bulkDeleteVersioned = async (documents, model, options={}) => {
+
+        const now = new Date()
+
+        // loop over the inputs to create a bulk deletr set
+        let ops = []
+        for (let i = 0; i < documents.length; i += 1) {
+            // Set fields for new
+            documents[i][constants.VALIDITY]["end"] = now
+
+            let op =   {
+                "deleteOne": {
+                  "filter": { "_id": documents[i]._id }
+                }
+              }
+            
+            ops.push(op)
+        }
+
+        let resDeleted = undefined
+        let resVersioned = undefined
+
+        // delete on the main collection
+        resDeleted = await model.bulkWrite(ops, options)
+
+        // raise an error if not all the documents were modified
+        if (resDeleted.nRemoved < documents.length) {
+            let err = new Error('bulk delete failed, only ' + resDeleted.nRemoved + ' out of ' + documents.length + ' were removed')
+            throw (err)               
+        }
+
+        // save latest version in the versioned collection
+        let versionedModel = schema.statics.VersionedModel
+        resVersioned = await versionedModel.bulkSave(documents, options)
+      
+        return resDeleted
     }
 
     // document level middleware
