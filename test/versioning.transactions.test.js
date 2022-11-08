@@ -114,6 +114,22 @@ const mockSeventeen = {
   number: 17
 }
 
+const mockEighteen = {
+  _id: new mongoose.Types.ObjectId(),
+  data: "eighteenth mock test",
+  number: 18
+}
+const mockNineteen = {
+  _id: new mongoose.Types.ObjectId(),
+  data: "nineteenth mock test",
+  number: 19
+}
+const mockTwenty = {
+  _id: new mongoose.Types.ObjectId(),
+  data: "twentieth mock test",
+  number: 20
+}
+
 tap.before(async function() {
 
   mongoServer = await MongoMemoryReplSet.create({ replSet: { count: 4 } })
@@ -674,6 +690,89 @@ tap.test('delete using deleteMany with custom deleter', async (childTest) => {
 
   childTest.end()
 })
+
+// test versioning CRUD
+tap.test('bulk insert objects', async (childTest) => {
+  let documents = [new Mock(mockEighteen), new Mock(mockNineteen), new Mock(mockTwenty)]
+
+  // store _session in document and save
+  let res = await Mock.saveMany(documents, {}, Mock)
+  
+  childTest.equal(res.nInserted,3)
+
+  let mock = await Mock.findById(mockEighteen._id)
+  childTest.type(mock[constants.VALIDITY].start, Date)
+  childTest.equal(mock[constants.VERSION], 1)
+
+  childTest.end()
+})
+
+// test versioning CRUD
+tap.test('bulk update objects', async (childTest) => {
+  let originals = [ await Mock.findById(mockEighteen._id), await Mock.findById(mockNineteen._id), await Mock.findById(mockTwenty._id)]
+  let updates = [ await Mock.findById(mockEighteen._id), await Mock.findById(mockNineteen._id), await Mock.findById(mockTwenty._id)]
+
+  // make changes
+  for (let document of updates){
+    document.data = "new " + document.data
+  }
+
+  // start session and save
+  session = await mongoose.startSession()
+  session.startTransaction()
+
+  let res = await Mock.saveMany(updates, originals, Mock, {session})
+
+  // commit transaction
+  await session.commitTransaction()
+  session.endSession()
+
+  childTest.equal(res.nModified,3)
+
+  let mock = await Mock.findById(mockEighteen._id)
+  childTest.type(mock[constants.VALIDITY].start, Date)
+  childTest.equal(mock[constants.VERSION], 2)
+
+  childTest.end()
+})
+
+// test versioning CRUD
+tap.test('bulk update objects with different lengths fail', async (childTest) => {
+  let originals = [ await Mock.findById(mockEighteen._id), await Mock.findById(mockNineteen._id), await Mock.findById(mockTwenty._id)]
+  let updates = [ await Mock.findById(mockEighteen._id), await Mock.findById(mockNineteen._id)]
+
+  // make changes
+  for (let document of updates){
+    document.data = "new " + document.data
+  }
+
+  // start session and save
+  session = await mongoose.startSession()
+  session.startTransaction()
+
+  let res = undefined
+  try {
+
+    // update that should fail (modifying _id to an existent one)
+    res = await Mock.saveMany(updates, originals, Mock, {session})
+
+    // commit transaction
+    await session.commitTransaction()
+    session.endSession()
+
+  } catch (e) {
+    // rollback if update fails
+    if (session) session.endSession()
+  }
+
+  childTest.equal(res, undefined)
+
+  let mock = await Mock.findById(mockEighteen._id)
+  childTest.equal(mock[constants.VERSION], 2)
+
+  childTest.end()
+})
+
 
 tap.teardown(async function() {
   await mongoose.disconnect()

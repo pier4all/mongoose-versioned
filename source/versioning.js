@@ -143,6 +143,49 @@ module.exports = function (schema, options) {
         return document
     }
 
+    // Add special find by id and version number that includes versioning
+    schema.statics.saveMany = async (documents, originals, model, options={}) => {
+
+        // check inputs have the proper length
+        if(documents.length != originals.length && originals.length>0) {
+            let err = new Error('documents and originals lengths do not match')
+            throw (err)
+        }
+
+        const now = new Date()
+
+        // loop over the inputs to create a bulk write set
+        for (let i = 0; i < documents.length; i += 1) {
+            // Set fields for new
+            documents[i][constants.VALIDITY] = { "start": now }
+
+            let baseVersion = documents[i][constants.VERSION] || 0
+            documents[i][constants.VERSION] = baseVersion + 1
+
+            if (originals.length>0) {
+                // set fields for original
+                originals[i][constants.VALIDITY]["end"] = now
+            }
+        }
+
+        let resUpdated = undefined
+        let resVersioned = undefined
+
+        if (originals.length>0) {
+            let versionedModel = schema.statics.VersionedModel
+            resVersioned = await versionedModel.bulkSave(originals, options)
+
+            // todo call buildBulkWriteOperations
+            let ops = model.buildBulkWriteOperations(documents, { skipValidation: true});
+            resUpdated = await model.bulkWrite(ops, options)
+
+        } else {
+            resUpdated = await model.bulkSave(documents, options)
+        }
+
+        return resUpdated
+    }
+
     // document level middleware
     schema.pre('save', async function (next) {
 

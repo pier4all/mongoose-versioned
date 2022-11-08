@@ -42,7 +42,7 @@
     "devDependencies": {
         "chalk": "^4.1.1",
         "mongodb-memory-server": "^8.0.4",
-        "tap": "^15.2.3"
+        "tap": "^16.3.0"
     },
     "resolutions": {
         "minimist": "^1.2.6"
