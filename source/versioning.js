@@ -54,7 +54,7 @@ module.exports = function (schema, options) {
     versionedIdField[constants.VERSION] = versionField[constants.VERSION]
 
     let editorField = {}
-    editorField[constants.EDITOR] = { type: String, required: true, default: constants.DEFAULT_EDITOR }
+    editorField[constants.EDITOR] = { type: String, required: false}
 
     let deleterField = {}
     deleterField[constants.DELETER] = { type: String, required: false}
@@ -143,7 +143,9 @@ module.exports = function (schema, options) {
         return document
     }
 
-    // Add special bulk save that supports versioning
+    // Add special bulk save that supports versioning, note that the
+    // documents are the updated documents and the originals a clone (simple JS object) of what is 
+    // already in the DB
     schema.statics.bulkSaveVersioned = async (documents, originals, model, options={}) => {
 
         // check inputs have the proper length
@@ -153,15 +155,27 @@ module.exports = function (schema, options) {
         }
 
         const now = new Date()
-
         // loop over the inputs to create a bulk write set
         for (let i = 0; i < documents.length; i += 1) {
-            // Set fields for new
+
+            // Set fields for update
             documents[i][constants.VALIDITY] = { "start": now }
 
             if (originals.length>0) {
+                // create the versioned 
+                originals[i] = new schema.statics.VersionedModel(originals[i])
+
+                // remove editor info
+                originals[i][constants.EDITOR] = documents[i][constants.EDITOR]|| constants.DEFAULT_EDITOR
+                delete documents[i][constants.EDITOR]
+
                 // set fields for original
                 originals[i][constants.VALIDITY]["end"] = now
+
+                let versionedId = {}
+                versionedId[constants.ID] = originals[i][constants.ID]
+                versionedId[constants.VERSION] = originals[i][constants.VERSION]
+                originals[i][constants.ID] = versionedId
 
                 // check and increase version number
                 if (documents[i][constants.VERSION] == originals[i][constants.VERSION]){
@@ -204,12 +218,21 @@ module.exports = function (schema, options) {
     schema.statics.bulkDeleteVersioned = async (documents, model, options={}) => {
 
         const now = new Date()
+        let versionedModel = schema.statics.VersionedModel
 
         // loop over the inputs to create a bulk deletr set
         let ops = []
         for (let i = 0; i < documents.length; i += 1) {
-            // Set fields for new
+            documents[i] = new versionedModel(fromJS(documents[i].toObject()).toJS())
+
+            // Set fields for versioned
             documents[i][constants.VALIDITY]["end"] = now
+            documents[i][constants.DELETER] = documents[i][constants.DELETER]|| constants.DEFAULT_DELETER
+
+            let versionedId = {}
+            versionedId[constants.ID] = documents[i][constants.ID]
+            versionedId[constants.VERSION] = documents[i][constants.VERSION]
+            documents[i][constants.ID] = versionedId
 
             let op =   {
                 "deleteOne": {
@@ -233,7 +256,6 @@ module.exports = function (schema, options) {
         }
 
         // save latest version in the versioned collection
-        let versionedModel = schema.statics.VersionedModel
         resVersioned = await versionedModel.bulkSave(documents, options)
       
         return resDeleted
@@ -285,11 +307,15 @@ module.exports = function (schema, options) {
 
         this[constants.VALIDITY] = { "start": now }
 
-        // Special case for the findAndDelete to include deletion information
-        if (this[constants.DELETION]) {
-            let delete_info = this[constants.DELETION]
-            delete this[constants.DELETION]
-            clone[constants.DELETER] = delete_info[constants.DELETER]
+        // Special case for the findAndDelete to include deleter information
+        if (this[constants.DELETER]) {
+            clone[constants.DELETER] = this[constants.DELETER] 
+        }
+        // store edition info
+        else {
+            let editor_info = this[constants.EDITOR] || constants.DEFAULT_EDITOR
+            this[constants.EDITOR] = undefined
+            clone[constants.EDITOR] = editor_info
         }
 
         // Increment version number
@@ -309,9 +335,6 @@ module.exports = function (schema, options) {
         delete this._session
 
         // save current version clone in shadow collection
-        let delete_info = this[constants.DELETION] || {}
-        delete this[constants.DELETION]
-
         let clone = fromJS(this.toObject()).toJS()
 
         // Build Vermongo historical ID
@@ -323,7 +346,8 @@ module.exports = function (schema, options) {
             "start": start,
             "end": now
         }
-        clone[constants.DELETER] = delete_info[constants.DELETER] || constants.DEFAULT_DELETER
+
+        clone[constants.DELETER] = this[constants.DELETER]|| constants.DEFAULT_DELETER
 
         await new schema.statics.VersionedModel(clone).save(session)
 

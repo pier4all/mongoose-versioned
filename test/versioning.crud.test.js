@@ -122,7 +122,7 @@ tap.test('trying to update old version fails', async (childTest) => {
 
 tap.test('delete object moves it to archive', async (childTest) => {
   const mock = await Mock.findById(mockOne[constants.ID])
-  mock._deletion = { "_deleter": "test" }
+  mock._deleter = "test"
   await mock.remove()
 
   const noMock = await Mock.findValidVersion(mockOne[constants.ID], new Date(), Mock)

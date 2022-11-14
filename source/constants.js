@@ -6,9 +6,7 @@ const VALIDITY = "_validity"
 const EDITOR = "_editor"
 const DELETER = "_deleter"
 const DEFAULT_EDITOR = "default"
-const DELETION = "_deletion"
-const DEFAULT_DELETER = "deleter"
-const EDITION = "_edition"
+const DEFAULT_DELETER = "default"
 const SESSION = "_session"
 
 const RESERVED_FIELDS = [
@@ -16,8 +14,6 @@ const RESERVED_FIELDS = [
     VALIDITY,
     EDITOR,
     DELETER,
-    DELETION,
-    EDITION,
     SESSION ]
 
 module.exports = {
@@ -28,8 +24,6 @@ module.exports = {
     DELETER,
     DEFAULT_EDITOR,
     DEFAULT_DELETER,
-    DELETION,
-    EDITION,
     SESSION, 
     RESERVED_FIELDS
 }

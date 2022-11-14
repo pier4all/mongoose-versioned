@@ -14,9 +14,10 @@ exports.filterAndModifyOne = async (query, next) => {
 
         if (!query._update) {
             // special case for delete operations
-            let delete_info = query.options[constants.DELETION] || {}
-            delete_info[constants.DELETER] = delete_info[constants.DELETER] || constants.DEFAULT_DELETER
-            base[constants.DELETION] = delete_info
+            base[constants.DELETER] = query.options[constants.DELETER] || constants.DEFAULT_DELETER
+        } else {
+            // special case for update operations
+            base[constants.EDITOR] = query.options[constants.EDITOR] || constants.DEFAULT_EDITOR            
         }
 
         await base.save({session})
@@ -28,7 +29,6 @@ exports.filterAndModifyOne = async (query, next) => {
         }
 
     }
-
     next()
 }
 
@@ -48,9 +48,10 @@ exports.filterAndModifyMany = async (query, next) => {
 
         if (!query._update) {
             // special case for delete operations
-            let delete_info = query.options[constants.DELETION] || {}
-            delete_info[constants.DELETER] = delete_info[constants.DELETER] || constants.DEFAULT_DELETER
-            base[constants.DELETION] = delete_info
+            base[constants.DELETER] = query.options[constants.DELETER] || constants.DEFAULT_DELETER
+        } else {
+            // special case for update operations
+            base[constants.EDITOR] = query.options[constants.EDITOR] || constants.DEFAULT_EDITOR            
         }
 
         await base.save({session})

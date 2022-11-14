@@ -84,44 +84,6 @@ tap.test(`schema cannot have field ${constants.VALIDITY}`, t => {
   t.end()
 })
 
-tap.test(`schema cannot have field ${constants.DELETION}`, t => {
-  try {    
-    const NAME = "bad"  
-    let badSchema = new Schema({ })
-
-    let reservedField = {}
-    reservedField[constants.DELETION] = { type: Date, required: false }
-    badSchema.add(reservedField)
-    
-    badSchema.plugin(versioning, {collection: NAME + "s.versioning", ensureIndex: false})
-    mongoose.model(NAME, badSchema)
-    t.fail('Should not get here')
-
-  } catch (err) {
-    t.ok(err, 'Got expected error')
-  }
-  t.end()
-})
-
-tap.test(`schema cannot have field ${constants.EDITION}`, t => {
-  try {    
-    const NAME = "bad"  
-    let badSchema = new Schema({ })
-
-    let reservedField = {}
-    reservedField[constants.EDITION] = { type: Date, required: false }
-    badSchema.add(reservedField)
-    
-    badSchema.plugin(versioning, {collection: NAME + "s.versioning", ensureIndex: false})
-    mongoose.model(NAME, badSchema)
-    t.fail('Should not get here')
-
-  } catch (err) {
-    t.ok(err, 'Got expected error')
-  }
-  t.end()
-})
-
 tap.test(`schema cannot have field ${constants.SESSION}`, t => {
   try {    
     const NAME = "bad"  
