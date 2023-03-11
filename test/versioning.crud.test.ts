@@ -1,20 +1,19 @@
-const chalk = require('chalk')
+import chalk from 'chalk'
 
-const versioning = require('../source/versioning')
-const constants = require('../source/constants')
+import versioning from '../source/versioning'
+import constants from '../source/constants'
 
-const mongoose = require('mongoose')
-//mongoose.Promise = require('bluebird')
-let Schema = mongoose.Schema
+import mongoose, { Schema } from 'mongoose'
+
 
 // start in memory server
-const { MongoMemoryServer } = require( 'mongodb-memory-server' )
+import { MongoMemoryServer } from 'mongodb-memory-server'
 
 // global variable to store the server
 let mongoServer
 
 // test versioning.js
-const tap = require('tap')
+import tap from 'tap'
 
 // data
 const mockOne = {
@@ -46,11 +45,7 @@ tap.before(async function() {
 
   let mongoUri = mongoServer.getUri()
 
-  const mongooseOpts = {
-    useUnifiedTopology: true,
-    useNewUrlParser: true,
-    //useFindAndModify: false
-  }
+  const mongooseOpts = { }
 
   await mongoose.connect(mongoUri, mongooseOpts)
 
@@ -190,9 +185,9 @@ tap.teardown(async function() {
 })
 
 // Utility function
-function findIndex(refIndex, indexes) {
+function findIndex(refIndex, indexes: [string, any][]) {
   let indexFound = false
-  for (const [name, index] of Object.entries(indexes)) {
+  for (const [, index] of Object.entries(indexes)) {
     if(index.length == refIndex.length){
       for (let i = 0; i < index.length; i++) {
         if (index[i].length === refIndex[i].length) {

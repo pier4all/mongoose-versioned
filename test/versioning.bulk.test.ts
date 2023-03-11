@@ -1,17 +1,16 @@
-const chalk = require('chalk')
+import chalk from 'chalk'
 
-const versioning = require('../source/versioning')
-const constants = require('../source/constants')
-const { fromJS } = require('immutable')
+import versioning from '../source/versioning'
+import constants from '../source/constants'
+import { fromJS } from 'immutable'
 
-const mongoose = require('mongoose')
-let Schema = mongoose.Schema
+import mongoose, { Schema } from 'mongoose'
 
 // start in memory server
-const { MongoMemoryReplSet } = require( 'mongodb-memory-server' )
+import { MongoMemoryReplSet } from  'mongodb-memory-server'
 
-// test versioning.js
-const tap = require('tap')
+// test versioning.ts
+import tap from 'tap'
 
 // global variable to store the mongo server
 let mongoServer
@@ -97,7 +96,7 @@ tap.test('bulk insert objects', async (childTest) => {
 
   // store _session in document and save
   let res = await Mock.bulkSaveVersioned(documents, [], Mock)
-  
+
   childTest.equal(res.nInserted, 3)
 
   let mock = await Mock.findById(mockOne._id)
@@ -118,7 +117,7 @@ tap.test('bulk update objects', async (childTest) => {
   }
 
   // start session and save
-  session = await mongoose.startSession()
+  const session = await mongoose.startSession()
   session.startTransaction()
 
   let res = await Mock.bulkSaveVersioned(updates, originals, Mock, {session})
@@ -154,7 +153,7 @@ tap.test('bulk update objects with different lengths fail', async (childTest) =>
   }
 
   // start session and save
-  session = await mongoose.startSession()
+  const session = await mongoose.startSession()
   session.startTransaction()
 
   let res = undefined
@@ -184,7 +183,7 @@ tap.test('bulk delete objects', async (childTest) => {
   let documents = [ await Mock.findById(mockOne._id), await Mock.findById(mockTwo._id), await Mock.findById(mockThree._id)]
 
   // start session and save
-  session = await mongoose.startSession()
+  const session = await mongoose.startSession()
   session.startTransaction()
 
   let res = await Mock.bulkDeleteVersioned(documents, Mock, {session})
@@ -207,8 +206,8 @@ tap.test('bulk delete objects', async (childTest) => {
 
 // test versioning CRUD
 tap.test('bulk delete already deleted objects', async (childTest) => {
-  let documents = [ await Mock.findVersion(mockOne._id, 2, Mock), 
-                    await Mock.findVersion(mockTwo._id, 2, Mock), 
+  let documents = [ await Mock.findVersion(mockOne._id, 2, Mock),
+                    await Mock.findVersion(mockTwo._id, 2, Mock),
                     await Mock.findVersion(mockThree._id, 2, Mock)]
 
   for (let document of documents){
@@ -216,7 +215,7 @@ tap.test('bulk delete already deleted objects', async (childTest) => {
   }
 
   let res = undefined
-  
+
   try {
     res = await Mock.bulkDeleteVersioned(documents, Mock)
   } catch(e) { }
@@ -227,10 +226,10 @@ tap.test('bulk delete already deleted objects', async (childTest) => {
 
 // test versioning CRUD
 tap.test('bulk update already deleted objects', async (childTest) => {
-  let updates = [ await Mock.findVersion(mockOne._id, 2, Mock), 
-    await Mock.findVersion(mockTwo._id, 2, Mock), 
+  let updates = [ await Mock.findVersion(mockOne._id, 2, Mock),
+    await Mock.findVersion(mockTwo._id, 2, Mock),
     await Mock.findVersion(mockThree._id, 2, Mock)]
-  
+
   for (let document of updates){
     document._id = document._id._id
   }
@@ -242,7 +241,7 @@ tap.test('bulk update already deleted objects', async (childTest) => {
   }
 
   let res = undefined
-  
+
   try {
     res = await Mock.bulkSaveVersioned(updates, originals, Mock)
   } catch(e) {
@@ -264,7 +263,7 @@ tap.test('bulk update wrong version documents', async (childTest) => {
   }
 
   let res = undefined
-  
+
   try {
     res = await Mock.bulkSaveVersioned(updates, originals, Mock)
   } catch(e) {
@@ -287,7 +286,7 @@ tap.test('bulk update partially fails rollsback', async (childTest) => {
   }
 
   let res = undefined
-  
+
   try {
     res = await Mock.bulkSaveVersioned(updates, originals, Mock)
   } catch(e) {
