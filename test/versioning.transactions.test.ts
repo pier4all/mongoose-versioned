@@ -1,16 +1,15 @@
-const chalk = require('chalk')
+import chalk from 'chalk'
 
-const versioning = require('../source/versioning')
-const constants = require('../source/constants')
+import versioning from '../source/versioning'
+import constants from '../source/constants'
 
-const mongoose = require('mongoose')
-let Schema = mongoose.Schema
+import mongoose, { Schema } from 'mongoose'
 
 // start in memory server
-const { MongoMemoryReplSet } = require( 'mongodb-memory-server' )
+import { MongoMemoryReplSet } from 'mongodb-memory-server'
 
 // test versioning.js
-const tap = require('tap')
+import tap from 'tap'
 
 // global variable to store the mongo server
 let mongoServer
@@ -151,7 +150,7 @@ tap.test('update object', async (childTest) => {
   mock[constants.EDITOR] = "test_editor"
 
   // start transaction
-  session = await mongoose.startSession()
+  const session = await mongoose.startSession()
   session.startTransaction()
 
   // store _session in document and save
@@ -178,7 +177,7 @@ tap.test('delete object moves it to archive', async (childTest) => {
   mock._deleter = "test"
 
   // start transaction
-  session = await mongoose.startSession()
+  const session = await mongoose.startSession()
   session.startTransaction()
 
   // store _session in document and remove
@@ -205,7 +204,7 @@ tap.test('update using updateOne at document level', async (childTest) => {
   let newData = "modified"
 
   // start transaction
-  session = await mongoose.startSession()
+  const session = await mongoose.startSession()
   session.startTransaction()
 
   // store _session in document and save
@@ -234,7 +233,7 @@ tap.test('update using updateOne at document level', async (childTest) => {
 tap.test('update using updateOne at model/query level', async (childTest) => {
 
   // start transaction
-  session = await mongoose.startSession()
+  const session = await mongoose.startSession()
   session.startTransaction()
 
   // store _session in document and save
@@ -270,7 +269,7 @@ tap.test('update using updateOne at model/query level', async (childTest) => {
 tap.test('update using updateOne not existing document does not update', async (childTest) => {
 
   // start transaction
-  session = await mongoose.startSession()
+  const session = await mongoose.startSession()
   session.startTransaction()
 
   let result = await Mock.updateOne({_id: new mongoose.Types.ObjectId()}, {"$set": {data: "modified"}}, {session})
@@ -292,7 +291,7 @@ tap.test('update rollback using updateOne at document level is consistent', asyn
   let existingId = mockFour._id
 
   // start transaction
-  session = await mongoose.startSession()
+  const session = await mongoose.startSession()
   session.startTransaction()
 
   let result = undefined
@@ -328,7 +327,7 @@ tap.test('update rollback using updateOne at document level is consistent', asyn
 tap.test('update using updateMany', async (childTest) => {
 
   // start transaction
-  session = await mongoose.startSession()
+  const session = await mongoose.startSession()
   session.startTransaction()
 
   // store _session in document and save
@@ -370,7 +369,7 @@ tap.test('update using updateMany', async (childTest) => {
 tap.test('update using updateMany with no matching documents', async (childTest) => {
 
   // start transaction
-  session = await mongoose.startSession()
+  const session = await mongoose.startSession()
   session.startTransaction()
 
   // store _session in document and save
@@ -389,7 +388,7 @@ tap.test('update using updateMany with no matching documents', async (childTest)
 tap.test('update using findOneAndUpdate', async (childTest) => {
 
   // start transaction
-  session = await mongoose.startSession()
+  const session = await mongoose.startSession()
   session.startTransaction()
 
   // store _session in document and save
@@ -416,7 +415,7 @@ tap.test('update using findOneAndUpdate', async (childTest) => {
 tap.test('update using findOneAndReplace', async (childTest) => {
 
   // start transaction
-  session = await mongoose.startSession()
+  const session = await mongoose.startSession()
   session.startTransaction()
 
   // store _session in document and save. Skip is ignored.
@@ -443,7 +442,7 @@ tap.test('update using findOneAndReplace', async (childTest) => {
 tap.test('update using replaceOne at model/query level', async (childTest) => {
 
   // start transaction
-  session = await mongoose.startSession()
+  const session = await mongoose.startSession()
   session.startTransaction()
 
   // store _session in document and save
@@ -475,7 +474,7 @@ tap.test('update using replaceOne at document level', async (childTest) => {
   let mock = await Mock.findById(mockTen._id)
 
   // start transaction
-  session = await mongoose.startSession()
+  const session = await mongoose.startSession()
   session.startTransaction()
 
   // store _session in document and save. Skip and sort ignored
@@ -508,7 +507,7 @@ tap.test('update using replaceOne at document level', async (childTest) => {
 tap.test('delete using deleteOne at model/query level', async (childTest) => {
 
   // start transaction
-  session = await mongoose.startSession()
+  const session = await mongoose.startSession()
   session.startTransaction()
 
   // include custom deleter in options
@@ -539,7 +538,7 @@ tap.test('delete using deleteOne at document level', async (childTest) => {
   let mock = await Mock.findById(mockTwelve._id)
 
   // start transaction
-  session = await mongoose.startSession()
+  const session = await mongoose.startSession()
   session.startTransaction()
 
   // include custom deleter in options
@@ -566,7 +565,7 @@ tap.test('delete using deleteOne at document level', async (childTest) => {
 tap.test('delete using findOneAndRemove at model/query level', async (childTest) => {
 
   // start transaction
-  session = await mongoose.startSession()
+  const session = await mongoose.startSession()
   session.startTransaction()
 
   // store _session in document and save
@@ -591,7 +590,7 @@ tap.test('delete using findOneAndRemove at model/query level', async (childTest)
 tap.test('delete using findOneAndDelete at model/query level', async (childTest) => {
 
   // start transaction
-  session = await mongoose.startSession()
+  const session = await mongoose.startSession()
   session.startTransaction()
 
   // store _session in document and save
@@ -616,7 +615,7 @@ tap.test('delete using findOneAndDelete at model/query level', async (childTest)
 tap.test('delete using deleteMany at model/query level', async (childTest) => {
 
   // start transaction
-  session = await mongoose.startSession()
+  const session = await mongoose.startSession()
   session.startTransaction()
 
   // store _session in document and save
@@ -650,7 +649,7 @@ tap.test('delete using deleteMany at model/query level', async (childTest) => {
 tap.test('delete using deleteMany with custom deleter', async (childTest) => {
 
   // start transaction
-  session = await mongoose.startSession()
+  const session = await mongoose.startSession()
   session.startTransaction()
 
   // include custom deleter in options
