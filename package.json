@@ -37,7 +37,7 @@
     "license": "MIT",
     "dependencies": {
         "immutable": "^4.0.0-rc.12",
-        "mongoose": "^6.2.2"
+        "mongoose": "^8.0.3"
     },
     "devDependencies": {
         "chalk": "^4.1.1",
