@@ -100,7 +100,7 @@ module.exports = function (schema, options) {
         const validity_end = constants.VALIDITY + ".end"
         const validity_start = constants.VALIDITY + ".start"
 
-        let query = { "_id": ObjectId(id)}
+        let query = { "_id": new ObjectId(id)}
         query[validity_start] = { $lte: date }
 
         let current = await model.findOne(query)
@@ -110,7 +110,7 @@ module.exports = function (schema, options) {
         // 2. if not, check versioned collection
         let versionedModel = schema.statics.VersionedModel
         query = {}
-        query[constants.ID + "." + constants.ID] = ObjectId(id)
+        query[constants.ID + "." + constants.ID] = new ObjectId(id)
         query[validity_start] = { $lte: date }
         query[validity_end] = { $gt: date }
 
@@ -123,7 +123,7 @@ module.exports = function (schema, options) {
 
         // 1. check if version is the main collection
         let query = {}
-        query[constants.ID] = ObjectId(id)
+        query[constants.ID] = new ObjectId(id)
         query[constants.VERSION] = version
 
         let current = await model.findOne(query)
@@ -135,7 +135,7 @@ module.exports = function (schema, options) {
         let versionedModel = schema.statics.VersionedModel
         query = {}
         let versionedId = {}
-        versionedId[constants.ID] = ObjectId(id)
+        versionedId[constants.ID] = new ObjectId(id)
         versionedId[constants.VERSION] = version
         query[constants.ID] = versionedId
 
